@@ -26,4 +26,6 @@ docker compose -f docker-compose.prod.yml exec backend python manage.py migrate
 docker compose -f docker-compose.prod.yml exec backend python manage.py seed_demo
 ```
 
+If port 80 is already used on the VPS, set `HTTP_PORT=8080` in `.env` and open `http://SERVER:8080`.
+
 Credentials shared in chat should be rotated after initial setup.
