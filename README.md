@@ -12,6 +12,7 @@ docker compose up --build
 Local URLs:
 
 - Frontend: http://localhost:5173
+- Landing page: http://localhost:5174
 - Backend API: http://localhost:8000/api/v1
 - API docs: http://localhost:8000/api/docs/
 
@@ -39,6 +40,30 @@ cd frontend
 npm install
 npm run dev
 ```
+
+## Frontend Apps
+
+This repo contains two independent frontend apps.
+
+### Admin Dashboard
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The admin dashboard runs on `http://localhost:5173` and contains the authenticated workspace dashboard plus the staff-only `/app/superadmin` area.
+
+### Landing Page
+
+```bash
+cd landing
+npm install
+npm run dev
+```
+
+The landing page runs on `http://localhost:5174`. Set `VITE_ADMIN_URL` when the landing app should link to a deployed admin dashboard instead of the local `/signin` path.
 
 ## Demo Flow
 
@@ -73,7 +98,10 @@ Local development uses `TELEGRAM_PROVIDER=mock`. The backend is organized so an 
 
 ```bash
 cd backend && pytest -q
+cd frontend && npm test
 cd frontend && npm run build
+cd landing && npm test
+cd landing && npm run build
 docker compose config
 ```
 
@@ -82,5 +110,4 @@ docker compose config
 - Real Telegram Bot API webhook setup is scaffolded but not fully enabled.
 - Vertex provider validates configuration and shares the provider interface; deterministic local behavior uses mock AI.
 - Billing models exist, but real payment processing is deferred.
-- Super-admin and polished marketing pages are deferred.
 - OpenAPI generation works but has serializer warnings for some APIView endpoints.
