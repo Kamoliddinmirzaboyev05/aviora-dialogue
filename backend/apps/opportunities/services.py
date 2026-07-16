@@ -1,5 +1,6 @@
 from django.db import transaction
 from django.utils import timezone
+import re
 
 from apps.ai_engine.safety import validate_permission_first_response, validate_product_response
 from apps.ai_engine.services import get_ai_provider
@@ -132,7 +133,9 @@ def simulate_consent_reply(*, conversation: Conversation, message: str):
         source="telegram",
         delivery_state="received",
     )
-    granted = any(term in message.lower() for term in ["yes", "please", "send", "ok", "ha"])
+    normalized = message.lower()
+    denied = bool(re.search(r"\b(no|nah|nope|stop|do not|don't|dont|not now|yo'q)\b", normalized))
+    granted = not denied and bool(re.search(r"\b(yes|please|send|ok|okay|ha|sure)\b", normalized))
     status = ConsentRecord.Status.GRANTED if granted else ConsentRecord.Status.DENIED
     consent = ConsentRecord.objects.filter(conversation=conversation).order_by("-created_at").first()
     if not consent:
@@ -176,6 +179,8 @@ def generate_product_response(*, conversation: Conversation):
 
 @transaction.atomic
 def convert_conversation_to_lead(*, workspace, conversation: Conversation, actor=None):
+    if conversation.consent_status != ConsentRecord.Status.GRANTED:
+        raise PermissionError("Consent is required before converting a conversation to a lead.")
     lead, _ = Lead.objects.get_or_create(
         workspace=workspace,
         conversation=conversation,

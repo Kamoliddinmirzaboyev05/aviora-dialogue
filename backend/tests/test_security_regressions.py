@@ -35,6 +35,50 @@ def test_product_response_api_requires_granted_consent():
     assert response.data["error"]["code"] == "consent_required"
 
 
+def test_negative_consent_reply_does_not_unlock_product_response():
+    client, workspace = login_client()
+    result = simulate_incoming_message(
+        workspace=workspace,
+        actor=None,
+        message="Can anyone recommend a simple CRM for a small sales team?",
+        sender_name="Alex Founder",
+        telegram_user_id="9002",
+    )
+    conversation = approve_permission_draft(draft=result["draft"], actor=None)
+
+    consent = client.post(
+        f"/api/v1/conversations/{conversation.id}/simulate-consent/",
+        {"message": "nah, do not send me anything"},
+        format="json",
+    )
+    product_response = client.post(f"/api/v1/conversations/{conversation.id}/generate-product-response/", {}, format="json")
+
+    assert consent.status_code == 200
+    assert consent.data["consent"]["status"] == "denied"
+    assert product_response.status_code == 403
+
+
+def test_lead_conversion_api_requires_granted_consent():
+    client, workspace = login_client()
+    result = simulate_incoming_message(
+        workspace=workspace,
+        actor=None,
+        message="Can anyone recommend a simple CRM for a small sales team?",
+        sender_name="Alex Founder",
+        telegram_user_id="9003",
+    )
+    conversation = approve_permission_draft(draft=result["draft"], actor=None)
+
+    response = client.post(
+        "/api/v1/leads/convert/",
+        {"workspace": str(workspace.id), "conversation": str(conversation.id)},
+        format="json",
+    )
+
+    assert response.status_code == 403
+    assert response.data["error"]["code"] == "consent_required"
+
+
 def test_telegram_connection_api_never_returns_encrypted_bot_token():
     client, workspace = login_client()
     response = client.get(f"/api/v1/telegram/connections/?workspace={workspace.id}")

@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.common.api import api_error
 from apps.conversations.models import Conversation
 from apps.leads.models import Lead
 from apps.opportunities.serializers import LeadSerializer
@@ -34,5 +35,8 @@ class ConvertLeadView(APIView):
     def post(self, request):
         workspace = Workspace.objects.get(id=request.data["workspace"], memberships__user=request.user)
         conversation = Conversation.objects.get(id=request.data["conversation"], workspace=workspace)
-        lead = convert_conversation_to_lead(workspace=workspace, conversation=conversation, actor=request.user)
+        try:
+            lead = convert_conversation_to_lead(workspace=workspace, conversation=conversation, actor=request.user)
+        except PermissionError as error:
+            return api_error("consent_required", str(error), status=403)
         return Response(LeadSerializer(lead).data, status=status.HTTP_201_CREATED)

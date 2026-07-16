@@ -5,6 +5,7 @@ The local MVP is Docker Compose ready. Production deployment should use:
 - `docker-compose.prod.yml`
 - Nginx reverse proxy
 - Gunicorn for Django
+- static frontend assets served by an Nginx frontend container
 - Celery worker and beat
 - PostgreSQL
 - Redis
