@@ -11,15 +11,15 @@
 - [x] Auth, workspaces, and roles
 - [x] Products and triggers
 - [x] Mock Telegram ingestion
-- [ ] Mock AI classification and response drafting
-- [ ] Opportunity and approval queue
-- [ ] Consent enforcement
-- [ ] Conversations and lead conversion
-- [ ] Database-derived analytics
+- [x] Mock AI classification and response drafting
+- [x] Opportunity and approval queue
+- [x] Consent enforcement
+- [x] Conversations and lead conversion
+- [x] Database-derived analytics
 
 ## Quality
 
-- [ ] Backend workflow tests
+- [x] Backend workflow tests
 - [ ] Frontend build
 - [ ] Docker Compose smoke test
 - [ ] Documentation
