@@ -1,5 +1,6 @@
 from django.conf import settings
 
+from apps.ai_engine.exceptions import AIProviderConfigurationError
 from apps.ai_engine.providers.mock import MockAIProvider
 
 
@@ -22,4 +23,4 @@ class VertexAIProvider(MockAIProvider):
             if not value
         ]
         if missing:
-            raise RuntimeError(f"Vertex AI is not configured: {', '.join(missing)}")
+            raise AIProviderConfigurationError("Vertex AI configuration is incomplete.")

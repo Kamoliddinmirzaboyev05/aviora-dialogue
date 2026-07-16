@@ -1,5 +1,6 @@
 from dataclasses import asdict
 from time import perf_counter
+from uuid import UUID
 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -20,7 +21,12 @@ class AIConnectionTestView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        membership = get_workspace_admin_membership(request)
+        try:
+            workspace_id = UUID(str(request.data.get("workspace")))
+        except (AttributeError, TypeError, ValueError):
+            return api_error("invalid_workspace", "Workspace must be a valid UUID.", status=400)
+
+        membership = get_workspace_admin_membership(request, workspace_id)
         if not membership:
             return api_error("workspace_admin_required", "Workspace owner or admin access is required.", status=403)
 
@@ -36,8 +42,8 @@ class AIConnectionTestView(APIView):
                 product=product,
                 consent_status="not_requested",
             )
-        except (AIProviderConfigurationError, AIProviderError) as error:
-            return api_error("ai_connection_failed", str(error), status=503)
+        except (AIProviderConfigurationError, AIProviderError):
+            return api_error("ai_connection_failed", "AI provider connection test failed.", status=503)
 
         metadata = get_ai_provider_metadata(provider)
         return Response(
