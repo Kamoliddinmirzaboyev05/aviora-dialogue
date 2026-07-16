@@ -4,7 +4,7 @@
 
 - [x] Local runtime files
 - [x] Django API foundation
-- [ ] React app foundation
+- [x] React app foundation
 
 ## Core Workflow
 
@@ -20,7 +20,7 @@
 ## Quality
 
 - [x] Backend workflow tests
-- [ ] Frontend build
+- [x] Frontend build
 - [ ] Docker Compose smoke test
 - [ ] Documentation
 
