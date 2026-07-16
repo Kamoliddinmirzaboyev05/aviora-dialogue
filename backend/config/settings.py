@@ -129,7 +129,12 @@ CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 AI_PROVIDER = os.getenv("AI_PROVIDER", "mock").strip().lower()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-TELEGRAM_PROVIDER = os.getenv("TELEGRAM_PROVIDER", "mock")
+TELEGRAM_PROVIDER = os.getenv("TELEGRAM_PROVIDER", "mock").strip().lower()
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_WEBHOOK_SECRET = os.getenv("TELEGRAM_WEBHOOK_SECRET", "")
+TELEGRAM_WEBHOOK_BASE_URL = os.getenv(
+    "TELEGRAM_WEBHOOK_BASE_URL", "http://localhost:8000"
+).rstrip("/")
 VERTEX_PROJECT_ID = os.getenv("VERTEX_PROJECT_ID", "")
 VERTEX_LOCATION = os.getenv("VERTEX_LOCATION", "us-central1")
 VERTEX_MODEL = os.getenv("VERTEX_MODEL", "gemini-2.5-flash")
