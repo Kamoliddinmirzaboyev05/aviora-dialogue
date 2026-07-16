@@ -1,5 +1,5 @@
 import { NavLink, Outlet, Navigate } from "react-router-dom";
-import { Activity, Bot, CheckSquare, LineChart, MessageSquare, Package, Radio, Settings, ShieldCheck, Target, Users } from "lucide-react";
+import { Activity, Bot, CheckSquare, LineChart, MessageSquare, Package, Radio, Settings, Target, Users } from "lucide-react";
 
 import { Button } from "../components/ui/Button";
 import { useAuth } from "../features/auth/AuthProvider";
@@ -20,9 +20,6 @@ const nav = [
 export function DashboardLayout() {
   const auth = useAuth();
   if (!auth.isAuthenticated) return <Navigate to="/signin" replace />;
-  const visibleNav = auth.isPlatformStaff
-    ? [...nav, { to: "/app/superadmin", label: "Superadmin", icon: ShieldCheck }]
-    : nav;
 
   return (
     <div className="min-h-screen bg-panel text-ink">
@@ -37,7 +34,7 @@ export function DashboardLayout() {
           </div>
         </div>
         <nav className="space-y-1">
-          {visibleNav.map((item) => (
+          {nav.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}

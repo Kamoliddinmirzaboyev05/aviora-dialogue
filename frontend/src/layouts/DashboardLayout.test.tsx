@@ -74,13 +74,12 @@ function renderLayout(isStaff: boolean) {
 }
 
 describe("DashboardLayout", () => {
-  test("shows the Superadmin nav item to staff users", async () => {
+  test("does not show the Superadmin nav item to staff users", async () => {
     renderLayout(true);
 
-    expect(await screen.findByRole("link", { name: /superadmin/i })).toHaveAttribute(
-      "href",
-      "/app/superadmin"
-    );
+    expect(await screen.findByText("staff@example.com")).toBeInTheDocument();
+    expect(await screen.findByText("Dashboard home")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /superadmin/i })).not.toBeInTheDocument();
   });
 
   test("hides the Superadmin nav item from non-staff users", async () => {
