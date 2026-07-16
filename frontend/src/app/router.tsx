@@ -9,6 +9,7 @@ import { OpportunitiesPage } from "../pages/OpportunitiesPage";
 import { OverviewPage } from "../pages/OverviewPage";
 import { ProductsPage } from "../pages/ProductsPage";
 import { SimulatorPage } from "../pages/SimulatorPage";
+import { SuperadminPage } from "../pages/SuperadminPage";
 import { TelegramPage } from "../pages/TelegramPage";
 import { TriggersPage } from "../pages/TriggersPage";
 import { SignInPage } from "../features/auth/SignInPage";
@@ -29,7 +30,8 @@ export const router = createBrowserRouter([
       { path: "leads", element: <LeadsPage /> },
       { path: "products", element: <ProductsPage /> },
       { path: "triggers", element: <TriggersPage /> },
-      { path: "analytics", element: <AnalyticsPage /> }
+      { path: "analytics", element: <AnalyticsPage /> },
+      { path: "superadmin", element: <SuperadminPage /> }
     ]
   }
 ]);
