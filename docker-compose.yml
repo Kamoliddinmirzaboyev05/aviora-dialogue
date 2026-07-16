@@ -1,0 +1,86 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ethical_dialogue
+      POSTGRES_USER: ethical
+      POSTGRES_PASSWORD: ethical
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ethical -d ethical_dialogue"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    env_file: .env.example
+    command: ["/app/infrastructure/docker/backend-entrypoint.sh", "web"]
+    volumes:
+      - ./backend:/app/backend
+      - ./infrastructure:/app/infrastructure
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery:
+    build:
+      context: ./backend
+    env_file: .env.example
+    command: ["/app/infrastructure/docker/backend-entrypoint.sh", "worker"]
+    volumes:
+      - ./backend:/app/backend
+      - ./infrastructure:/app/infrastructure
+    depends_on:
+      backend:
+        condition: service_started
+      redis:
+        condition: service_healthy
+
+  celery-beat:
+    build:
+      context: ./backend
+    env_file: .env.example
+    command: ["/app/infrastructure/docker/backend-entrypoint.sh", "beat"]
+    volumes:
+      - ./backend:/app/backend
+      - ./infrastructure:/app/infrastructure
+    depends_on:
+      backend:
+        condition: service_started
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000/api/v1
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
