@@ -21,11 +21,12 @@
 
 - [x] Backend workflow tests
 - [x] Frontend build
-- [ ] Docker Compose smoke test
-- [ ] Documentation
+- [x] Docker Compose config validation
+- [ ] Docker image build smoke test (blocked locally: Docker daemon is not running)
+- [x] Documentation
 
 ## Deployment
 
-- [ ] Production compose
-- [ ] Nginx production notes
-- [ ] VPS deployment script
+- [x] Production compose
+- [x] Nginx production notes
+- [x] VPS deployment script
