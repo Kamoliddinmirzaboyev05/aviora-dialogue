@@ -126,7 +126,9 @@ SPECTACULAR_SETTINGS = {
 CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
-AI_PROVIDER = os.getenv("AI_PROVIDER", "mock")
+AI_PROVIDER = os.getenv("AI_PROVIDER", "mock").strip().lower()
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 TELEGRAM_PROVIDER = os.getenv("TELEGRAM_PROVIDER", "mock")
 VERTEX_PROJECT_ID = os.getenv("VERTEX_PROJECT_ID", "")
 VERTEX_LOCATION = os.getenv("VERTEX_LOCATION", "us-central1")
