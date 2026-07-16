@@ -1,13 +1,16 @@
 from django.conf import settings
 from django.db import transaction
 
-from apps.telegram_integration.exceptions import TelegramConfigurationError
+from apps.telegram_integration.exceptions import (
+    TelegramConfigurationError,
+    TelegramUpdateProcessingError,
+)
 from apps.telegram_integration.models import TelegramChat, TelegramUpdate
 from apps.telegram_integration.providers.bot_api import TelegramBotAPIProvider
 from apps.telegram_integration.providers.mock import MockTelegramProvider
 
 
-NON_CLAIMABLE_UPDATE_STATUSES = {"processing", "processed", "ignored", "unsupported"}
+TERMINAL_UPDATE_STATUSES = {"processed", "ignored", "unsupported"}
 
 
 def get_telegram_provider():
@@ -24,24 +27,6 @@ def ingest_telegram_update(*, connection, payload: dict):
     if update_id is None:
         return None, False
 
-    update, claimed = _claim_update(
-        connection=connection, update_id=update_id, payload=payload
-    )
-    if not claimed:
-        return update, False
-
-    try:
-        with transaction.atomic():
-            update = TelegramUpdate.objects.select_for_update().get(pk=update.pk)
-            return _process_claimed_update(
-                update=update, connection=connection, payload=payload
-            )
-    except Exception:
-        _mark_update_failed(update.pk)
-        raise
-
-
-def _claim_update(*, connection, update_id, payload: dict):
     with transaction.atomic():
         update, created = TelegramUpdate.objects.select_for_update().get_or_create(
             connection=connection,
@@ -52,13 +37,19 @@ def _claim_update(*, connection, update_id, payload: dict):
                 "status": "processing",
             },
         )
-        if not created and update.status in NON_CLAIMABLE_UPDATE_STATUSES:
+        if not created and update.status in TERMINAL_UPDATE_STATUSES:
             return update, False
         if not created:
             update.payload = payload
             update.status = "processing"
             update.save(update_fields=["payload", "status", "updated_at"])
-        return update, True
+        processing_failed = _process_claimed_update(
+            update=update, connection=connection, payload=payload
+        )
+
+    if processing_failed:
+        raise TelegramUpdateProcessingError("Telegram update processing failed.")
+    return update, True
 
 
 def _process_claimed_update(*, update, connection, payload: dict):
@@ -66,19 +57,19 @@ def _process_claimed_update(*, update, connection, payload: dict):
     message = payload.get("message")
     if not isinstance(message, dict) or not isinstance(message.get("text"), str):
         _set_update_status(update, "unsupported")
-        return update, True
+        return False
 
     chat_payload = message.get("chat")
     sender = message.get("from")
     if not isinstance(chat_payload, dict) or not isinstance(sender, dict):
         _set_update_status(update, "unsupported")
-        return update, True
+        return False
 
     chat_id = chat_payload.get("id")
     sender_id = sender.get("id")
     if chat_id is None or sender_id is None or sender.get("is_bot"):
         _set_update_status(update, "unsupported")
-        return update, True
+        return False
 
     chat = TelegramChat.objects.filter(
         connection=connection,
@@ -89,27 +80,26 @@ def _process_claimed_update(*, update, connection, payload: dict):
     ).first()
     if not connection.is_active or not chat:
         _set_update_status(update, "ignored")
-        return update, True
+        return False
 
     from apps.opportunities.services import simulate_incoming_message
 
-    simulate_incoming_message(
-        workspace=connection.workspace,
-        actor=None,
-        message=message["text"],
-        sender_name=_telegram_display_name(sender),
-        telegram_user_id=str(sender_id),
-        connection=connection,
-        chat=chat,
-    )
-    _set_update_status(update, "processed")
-    return update, True
-
-
-def _mark_update_failed(update_pk):
-    with transaction.atomic():
-        update = TelegramUpdate.objects.select_for_update().get(pk=update_pk)
+    try:
+        with transaction.atomic():
+            simulate_incoming_message(
+                workspace=connection.workspace,
+                actor=None,
+                message=message["text"],
+                sender_name=_telegram_display_name(sender),
+                telegram_user_id=str(sender_id),
+                connection=connection,
+                chat=chat,
+            )
+    except Exception:
         _set_update_status(update, "failed")
+        return True
+    _set_update_status(update, "processed")
+    return False
 
 
 def _telegram_display_name(sender: dict) -> str:

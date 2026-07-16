@@ -233,7 +233,7 @@ def test_webhook_retries_failed_update_and_marks_it_processed(
     )
 
 
-def test_webhook_does_not_process_duplicate_while_update_is_processing(
+def test_webhook_reclaims_legacy_processing_update(
     api_client, connection, chat, settings, monkeypatch
 ):
     settings.TELEGRAM_WEBHOOK_SECRET = "expected"
@@ -246,10 +246,41 @@ def test_webhook_does_not_process_duplicate_while_update_is_processing(
     )
     workflow_calls = 0
 
-    def unexpected_workflow(**_kwargs):
+    def recording_workflow(**_kwargs):
         nonlocal workflow_calls
         workflow_calls += 1
         return {"opportunity": None, "draft": None}
+
+    monkeypatch.setattr(
+        "apps.opportunities.services.simulate_incoming_message", recording_workflow
+    )
+
+    response = post_update(api_client, connection)
+
+    assert response.status_code == 200
+    assert workflow_calls == 1
+    assert Opportunity.objects.count() == 0
+    update = TelegramUpdate.objects.get(connection=connection, update_id="10001")
+    assert update.status == "processed"
+
+
+@pytest.mark.parametrize("terminal_status", ["processed", "ignored"])
+def test_webhook_short_circuits_terminal_update(
+    api_client, connection, chat, settings, monkeypatch, terminal_status
+):
+    settings.TELEGRAM_WEBHOOK_SECRET = "expected"
+    TelegramUpdate.objects.create(
+        workspace=connection.workspace,
+        connection=connection,
+        update_id="10001",
+        payload=TELEGRAM_UPDATE,
+        status=terminal_status,
+    )
+    workflow_calls = 0
+
+    def unexpected_workflow(**_kwargs):
+        nonlocal workflow_calls
+        workflow_calls += 1
 
     monkeypatch.setattr(
         "apps.opportunities.services.simulate_incoming_message", unexpected_workflow
@@ -259,15 +290,15 @@ def test_webhook_does_not_process_duplicate_while_update_is_processing(
 
     assert response.status_code == 200
     assert workflow_calls == 0
-    assert Opportunity.objects.count() == 0
     update = TelegramUpdate.objects.get(connection=connection, update_id="10001")
-    assert update.status == "processing"
+    assert update.status == terminal_status
 
 
 def test_webhook_rolls_back_workflow_effects_before_marking_update_failed(
     api_client, connection, chat, workflow, settings, monkeypatch
 ):
     settings.TELEGRAM_WEBHOOK_SECRET = "expected"
+    secret = "workflow-secret-sentinel"
 
     def failing_workflow(
         *, workspace, chat, message, sender_name, telegram_user_id, **_kwargs
@@ -286,16 +317,19 @@ def test_webhook_rolls_back_workflow_effects_before_marking_update_failed(
             source_message=message,
             detected_intent="test",
         )
-        raise RuntimeError("temporary workflow failure")
+        raise RuntimeError(secret)
 
     monkeypatch.setattr(
         "apps.opportunities.services.simulate_incoming_message", failing_workflow
     )
-    api_client.raise_request_exception = False
+    with pytest.raises(
+        RuntimeError, match="Telegram update processing failed"
+    ) as captured:
+        post_update(api_client, connection)
 
-    response = post_update(api_client, connection)
-
-    assert response.status_code == 500
+    assert secret not in str(captured.value)
+    assert captured.value.__cause__ is None
+    assert captured.value.__context__ is None
     assert Opportunity.objects.count() == 0
     assert TelegramContact.objects.count() == 0
     update = TelegramUpdate.objects.get(connection=connection, update_id="10001")

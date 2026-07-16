@@ -4,3 +4,7 @@ class TelegramConfigurationError(RuntimeError):
 
 class TelegramProviderError(RuntimeError):
     """Raised when a Telegram provider request cannot be completed."""
+
+
+class TelegramUpdateProcessingError(RuntimeError):
+    """Raised after a failed Telegram update is safely persisted."""
