@@ -233,6 +233,75 @@ def test_webhook_retries_failed_update_and_marks_it_processed(
     )
 
 
+def test_webhook_does_not_process_duplicate_while_update_is_processing(
+    api_client, connection, chat, settings, monkeypatch
+):
+    settings.TELEGRAM_WEBHOOK_SECRET = "expected"
+    TelegramUpdate.objects.create(
+        workspace=connection.workspace,
+        connection=connection,
+        update_id="10001",
+        payload=TELEGRAM_UPDATE,
+        status="processing",
+    )
+    workflow_calls = 0
+
+    def unexpected_workflow(**_kwargs):
+        nonlocal workflow_calls
+        workflow_calls += 1
+        return {"opportunity": None, "draft": None}
+
+    monkeypatch.setattr(
+        "apps.opportunities.services.simulate_incoming_message", unexpected_workflow
+    )
+
+    response = post_update(api_client, connection)
+
+    assert response.status_code == 200
+    assert workflow_calls == 0
+    assert Opportunity.objects.count() == 0
+    update = TelegramUpdate.objects.get(connection=connection, update_id="10001")
+    assert update.status == "processing"
+
+
+def test_webhook_rolls_back_workflow_effects_before_marking_update_failed(
+    api_client, connection, chat, workflow, settings, monkeypatch
+):
+    settings.TELEGRAM_WEBHOOK_SECRET = "expected"
+
+    def failing_workflow(
+        *, workspace, chat, message, sender_name, telegram_user_id, **_kwargs
+    ):
+        contact = TelegramContact.objects.create(
+            workspace=workspace,
+            telegram_user_id=telegram_user_id,
+            display_name=sender_name,
+        )
+        Opportunity.objects.create(
+            workspace=workspace,
+            chat=chat,
+            contact=contact,
+            product=Product.objects.get(workspace=workspace),
+            trigger_set=TriggerSet.objects.get(workspace=workspace),
+            source_message=message,
+            detected_intent="test",
+        )
+        raise RuntimeError("temporary workflow failure")
+
+    monkeypatch.setattr(
+        "apps.opportunities.services.simulate_incoming_message", failing_workflow
+    )
+    api_client.raise_request_exception = False
+
+    response = post_update(api_client, connection)
+
+    assert response.status_code == 500
+    assert Opportunity.objects.count() == 0
+    assert TelegramContact.objects.count() == 0
+    update = TelegramUpdate.objects.get(connection=connection, update_id="10001")
+    assert update.status == "failed"
+
+
 @pytest.mark.parametrize("field", ["monitoring_enabled", "admin_approved"])
 def test_webhook_does_not_run_workflow_for_unmonitored_or_unapproved_chat(
     api_client, connection, chat, workflow, settings, field
