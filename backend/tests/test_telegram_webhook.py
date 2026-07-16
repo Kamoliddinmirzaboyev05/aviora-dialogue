@@ -1,4 +1,5 @@
 from copy import deepcopy
+from uuid import UUID
 
 import pytest
 from django.contrib.auth import get_user_model
@@ -171,6 +172,67 @@ def test_webhook_is_idempotent_and_runs_workflow_once(
     assert contact.display_name == "Ada Lovelace"
 
 
+def test_webhook_routes_bot_api_update_to_exact_validated_chat(
+    api_client, connection, chat, workflow, settings
+):
+    settings.TELEGRAM_WEBHOOK_SECRET = "expected"
+    connection.provider = "bot_api"
+    connection.save(update_fields=["provider"])
+    wrong_chat = TelegramChat.objects.create(
+        id=UUID(int=0),
+        workspace=connection.workspace,
+        connection=connection,
+        title="Wrong unapproved chat",
+        telegram_chat_id="-999",
+        monitoring_enabled=True,
+        admin_approved=False,
+    )
+    api_client.raise_request_exception = False
+
+    response = post_update(api_client, connection)
+
+    assert response.status_code == 200
+    opportunity = Opportunity.objects.get(workspace=connection.workspace)
+    assert opportunity.chat == chat
+    assert opportunity.chat != wrong_chat
+
+
+def test_webhook_retries_failed_update_and_marks_it_processed(
+    api_client, connection, chat, settings, monkeypatch
+):
+    settings.TELEGRAM_WEBHOOK_SECRET = "expected"
+    attempts = 0
+
+    def flaky_workflow(**_kwargs):
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            raise RuntimeError("temporary workflow failure")
+        return {"opportunity": None, "draft": None}
+
+    monkeypatch.setattr(
+        "apps.opportunities.services.simulate_incoming_message", flaky_workflow
+    )
+    api_client.raise_request_exception = False
+
+    first = post_update(api_client, connection)
+
+    assert first.status_code == 500
+    update = TelegramUpdate.objects.get(connection=connection, update_id="10001")
+    assert update.status == "failed"
+
+    second = post_update(api_client, connection)
+
+    assert second.status_code == 200
+    update.refresh_from_db()
+    assert update.status == "processed"
+    assert attempts == 2
+    assert (
+        TelegramUpdate.objects.filter(connection=connection, update_id="10001").count()
+        == 1
+    )
+
+
 @pytest.mark.parametrize("field", ["monitoring_enabled", "admin_approved"])
 def test_webhook_does_not_run_workflow_for_unmonitored_or_unapproved_chat(
     api_client, connection, chat, workflow, settings, field
@@ -263,6 +325,25 @@ def test_workspace_owner_can_test_telegram_connection(
     }
 
 
+def test_workspace_owner_can_test_mock_telegram_connection(
+    owner_client, workspace, settings
+):
+    settings.TELEGRAM_PROVIDER = "mock"
+    owner_client.raise_request_exception = False
+
+    response = owner_client.post(
+        "/api/v1/telegram/test-connection/",
+        {"workspace": str(workspace.id)},
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.data == {
+        "state": "connected",
+        "bot": {"id": "mock-bot", "username": "mock_telegram_bot"},
+    }
+
+
 def test_workspace_reviewer_cannot_test_telegram_connection(reviewer_client, workspace):
     response = reviewer_client.post(
         "/api/v1/telegram/test-connection/",
@@ -296,6 +377,28 @@ def test_workspace_owner_can_register_webhook(
     assert provider.webhooks == [(expected_url, "registration-secret")]
     connection.refresh_from_db()
     assert connection.webhook_url == expected_url
+    assert connection.webhook_status == "active"
+
+
+def test_workspace_owner_can_register_mock_webhook(
+    owner_client, workspace, connection, settings
+):
+    settings.TELEGRAM_PROVIDER = "mock"
+    settings.TELEGRAM_WEBHOOK_SECRET = "mock-registration-secret"
+    settings.TELEGRAM_WEBHOOK_BASE_URL = "https://app.example.com"
+    owner_client.raise_request_exception = False
+
+    response = owner_client.post(
+        "/api/v1/telegram/register-webhook/",
+        {"workspace": str(workspace.id), "connection": str(connection.id)},
+        format="json",
+    )
+
+    expected_url = f"https://app.example.com/api/v1/telegram/webhook/{connection.id}/"
+    assert response.status_code == 200
+    assert response.data == {"state": "registered", "webhook_url": expected_url}
+    assert "mock-registration-secret" not in str(response.data)
+    connection.refresh_from_db()
     assert connection.webhook_status == "active"
 
 

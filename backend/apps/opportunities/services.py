@@ -17,9 +17,22 @@ from apps.triggers.services import match_trigger_set
 
 
 @transaction.atomic
-def simulate_incoming_message(*, workspace, actor, message: str, sender_name: str, telegram_user_id: str):
-    connection = TelegramConnection.objects.filter(workspace=workspace, provider="mock", is_active=True).first()
-    chat = TelegramChat.objects.filter(workspace=workspace, monitoring_enabled=True).first()
+def simulate_incoming_message(
+    *,
+    workspace,
+    actor,
+    message: str,
+    sender_name: str,
+    telegram_user_id: str,
+    connection=None,
+    chat=None,
+):
+    connection = connection or TelegramConnection.objects.filter(
+        workspace=workspace, provider="mock", is_active=True
+    ).first()
+    chat = chat or TelegramChat.objects.filter(
+        workspace=workspace, monitoring_enabled=True
+    ).first()
     product = Product.objects.filter(workspace=workspace, status="active").first()
     trigger = TriggerSet.objects.filter(workspace=workspace, enabled=True).first()
     if not (connection and chat and product and trigger):

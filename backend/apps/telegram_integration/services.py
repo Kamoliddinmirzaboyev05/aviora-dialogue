@@ -6,6 +6,9 @@ from apps.telegram_integration.providers.bot_api import TelegramBotAPIProvider
 from apps.telegram_integration.providers.mock import MockTelegramProvider
 
 
+TERMINAL_UPDATE_STATUSES = {"processed", "ignored"}
+
+
 def get_telegram_provider():
     provider_name = settings.TELEGRAM_PROVIDER.strip().lower()
     if provider_name == "mock":
@@ -29,8 +32,12 @@ def ingest_telegram_update(*, connection, payload: dict):
             "status": "received",
         },
     )
-    if not created:
+    if not created and update.status in TERMINAL_UPDATE_STATUSES:
         return update, False
+    if not created:
+        update.payload = payload
+        update.status = "received"
+        update.save(update_fields=["payload", "status", "updated_at"])
 
     message = payload.get("message")
     if not isinstance(message, dict) or not isinstance(message.get("text"), str):
@@ -62,13 +69,19 @@ def ingest_telegram_update(*, connection, payload: dict):
 
     from apps.opportunities.services import simulate_incoming_message
 
-    simulate_incoming_message(
-        workspace=connection.workspace,
-        actor=None,
-        message=message["text"],
-        sender_name=_telegram_display_name(sender),
-        telegram_user_id=str(sender_id),
-    )
+    try:
+        simulate_incoming_message(
+            workspace=connection.workspace,
+            actor=None,
+            message=message["text"],
+            sender_name=_telegram_display_name(sender),
+            telegram_user_id=str(sender_id),
+            connection=connection,
+            chat=chat,
+        )
+    except Exception:
+        _set_update_status(update, "failed")
+        raise
     _set_update_status(update, "processed")
     return update, True
 
