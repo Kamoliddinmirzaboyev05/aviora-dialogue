@@ -23,6 +23,8 @@ class MeView(APIView):
                     "id": str(request.user.id),
                     "email": request.user.email,
                     "full_name": request.user.full_name,
+                    "is_staff": request.user.is_staff,
+                    "is_superuser": request.user.is_superuser,
                 },
                 "memberships": MembershipSerializer(memberships, many=True).data,
             }

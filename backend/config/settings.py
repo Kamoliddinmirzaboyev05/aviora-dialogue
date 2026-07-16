@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "apps.notifications",
     "apps.audit_logs",
     "apps.billing",
+    "apps.superadmin.apps.SuperadminConfig",
     "apps.demo",
 ]
 
