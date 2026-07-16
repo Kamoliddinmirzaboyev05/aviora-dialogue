@@ -68,7 +68,9 @@ class WorkspaceListView(ListAPIView):
     def get_queryset(self):
         owner_email = Subquery(
             WorkspaceMembership.objects.filter(
-                workspace=OuterRef("pk"), role=WorkspaceMembership.Role.OWNER
+                workspace=OuterRef("pk"),
+                role=WorkspaceMembership.Role.OWNER,
+                is_active=True,
             )
             .order_by("created_at")
             .values("user__email")[:1]
@@ -134,7 +136,7 @@ class IntegrationStatusView(APIView):
                 "ai": {
                     "provider": settings.AI_PROVIDER,
                     "model": ai_model,
-                    "credential_configured": bool(settings.GEMINI_API_KEY),
+                    "credential_configured": _ai_credential_configured(),
                     "vertex_project_configured": bool(settings.VERTEX_PROJECT_ID),
                 },
                 "telegram": {
@@ -200,3 +202,19 @@ def _serialize_events(events):
         }
         for event in events
     ]
+
+
+def _ai_credential_configured():
+    if settings.AI_PROVIDER == "mock":
+        return True
+    if settings.AI_PROVIDER == "gemini":
+        return bool(settings.GEMINI_API_KEY)
+    if settings.AI_PROVIDER == "vertex":
+        return all(
+            [
+                settings.VERTEX_PROJECT_ID,
+                settings.VERTEX_LOCATION,
+                settings.VERTEX_MODEL,
+            ]
+        )
+    return False

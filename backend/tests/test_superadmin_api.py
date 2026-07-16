@@ -100,8 +100,18 @@ def platform_data():
     return {"owner": owner, "workspace": workspace}
 
 
-def test_regular_user_cannot_access_superadmin(user_client):
-    assert user_client.get("/api/v1/superadmin/overview/").status_code == 403
+@pytest.mark.parametrize(
+    "route",
+    [
+        "/api/v1/superadmin/overview/",
+        "/api/v1/superadmin/workspaces/",
+        "/api/v1/superadmin/users/",
+        "/api/v1/superadmin/integrations/",
+        "/api/v1/superadmin/events/",
+    ],
+)
+def test_regular_user_cannot_access_superadmin(user_client, route):
+    assert user_client.get(route).status_code == 403
 
 
 def test_staff_user_sees_platform_overview(staff_client, platform_data):
@@ -124,6 +134,7 @@ def test_staff_user_sees_platform_overview(staff_client, platform_data):
 
 
 def test_integrations_return_presence_not_secrets(staff_client, settings):
+    settings.AI_PROVIDER = "gemini"
     settings.GEMINI_API_KEY = "never-return-me"
     settings.TELEGRAM_BOT_TOKEN = "telegram-token-never-return-me"
     settings.TELEGRAM_WEBHOOK_SECRET = "webhook-secret-never-return-me"
@@ -135,6 +146,40 @@ def test_integrations_return_presence_not_secrets(staff_client, settings):
     assert response.data["telegram"]["bot_token_configured"] is True
     assert response.data["telegram"]["webhook_secret_configured"] is True
     assert "never-return-me" not in str(response.data)
+
+
+@pytest.mark.parametrize(
+    ("provider", "gemini_key", "vertex_project", "vertex_location", "vertex_model", "expected"),
+    [
+        ("mock", "", "", "", "", True),
+        ("gemini", "", "", "", "", False),
+        ("gemini", "configured-gemini-key", "", "", "", True),
+        ("vertex", "", "project-123", "", "gemini-2.5-flash", False),
+        ("vertex", "", "project-123", "us-central1", "gemini-2.5-flash", True),
+        ("unknown", "configured-gemini-key", "", "", "", False),
+    ],
+)
+def test_ai_credential_status_reflects_selected_provider(
+    staff_client,
+    settings,
+    provider,
+    gemini_key,
+    vertex_project,
+    vertex_location,
+    vertex_model,
+    expected,
+):
+    settings.AI_PROVIDER = provider
+    settings.GEMINI_API_KEY = gemini_key
+    settings.VERTEX_PROJECT_ID = vertex_project
+    settings.VERTEX_LOCATION = vertex_location
+    settings.VERTEX_MODEL = vertex_model
+
+    response = staff_client.get("/api/v1/superadmin/integrations/")
+
+    assert response.status_code == 200
+    assert response.data["ai"]["credential_configured"] is expected
+    assert "configured-gemini-key" not in str(response.data)
 
 
 def test_me_includes_staff_identity_flags(staff_client):
@@ -162,6 +207,26 @@ def test_staff_can_search_paginated_workspace_rows(staff_client, platform_data):
         "lead_count": 1,
         "plan": "Growth",
     }
+
+
+def test_workspace_list_hides_offboarded_owner_from_display_and_search(
+    staff_client, platform_data
+):
+    WorkspaceMembership.objects.filter(
+        workspace=platform_data["workspace"],
+        user=platform_data["owner"],
+        role=WorkspaceMembership.Role.OWNER,
+    ).update(is_active=False)
+
+    workspace_response = staff_client.get("/api/v1/superadmin/workspaces/?search=Northwind")
+    owner_search_response = staff_client.get(
+        "/api/v1/superadmin/workspaces/?search=owner@example.com"
+    )
+
+    assert workspace_response.status_code == 200
+    assert workspace_response.data["results"][0]["owner"] is None
+    assert owner_search_response.status_code == 200
+    assert owner_search_response.data["count"] == 0
 
 
 def test_staff_can_search_paginated_user_rows(staff_client, platform_data):
