@@ -116,7 +116,7 @@ def test_gemini_permission_request_normalizes_structured_response():
     )
 
 
-def test_gemini_provider_sanitizes_upstream_failures(product):
+def test_gemini_provider_discards_upstream_exception_cause(product):
     client = FakeGenAIClient(error=RuntimeError("credential=secret-token"))
     provider = GeminiAPIProvider(api_key="test-key", model="gemini-2.5-flash", client=client)
 
@@ -127,4 +127,4 @@ def test_gemini_provider_sanitizes_upstream_failures(product):
             consent_status="granted",
         )
 
-    assert "secret-token" not in str(error.value)
+    assert error.value.__cause__ is None

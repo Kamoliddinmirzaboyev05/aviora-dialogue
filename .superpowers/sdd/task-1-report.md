@@ -68,3 +68,39 @@ Results:
 ## Concerns
 
 No implementation concerns. An existing untracked `frontend/src/assets/` directory was left untouched and is excluded from the Task 1 commit.
+
+## Security Fix Evidence
+
+Reviewer finding: the sanitized Gemini error retained a credential-bearing upstream exception as `__cause__` through explicit exception chaining.
+
+Regression test added: `test_gemini_provider_discards_upstream_exception_cause` raises an upstream `RuntimeError("credential=secret-token")` and asserts that the resulting `AIProviderError.__cause__` is `None`.
+
+### RED
+
+Command:
+
+```bash
+cd backend && ../.venv/bin/pytest tests/test_ai_providers.py -q
+```
+
+Result: `1 failed, 5 passed in 1.01s`. The failing assertion showed `RuntimeError('credential=secret-token')` remained as `AIProviderError.__cause__`.
+
+### GREEN And Verification
+
+Commands:
+
+```bash
+cd backend && ../.venv/bin/pytest tests/test_ai_providers.py -q
+cd backend && ../.venv/bin/pytest -q
+cd backend && ../.venv/bin/ruff check apps/ai_engine/providers/gemini.py tests/test_ai_providers.py
+git diff --check
+```
+
+Results:
+
+- Focused provider suite: `6 passed in 0.78s`.
+- Full backend suite: `16 passed in 6.74s`.
+- Ruff: `All checks passed!`.
+- Diff check: no whitespace errors.
+
+Implementation: changed the Gemini error boundary to `raise AIProviderError(...) from None`, so no upstream exception is retained as the public error's explicit cause or rendered through traceback chaining.

@@ -90,10 +90,10 @@ class GeminiAPIProvider:
                 ),
             )
             return response_model.model_validate(response.parsed)
-        except Exception as error:
+        except Exception:
             raise AIProviderError(
                 "Gemini request failed. Check provider configuration and service availability."
-            ) from error
+            ) from None
 
     @staticmethod
     def _product_context(product: Product) -> str:
