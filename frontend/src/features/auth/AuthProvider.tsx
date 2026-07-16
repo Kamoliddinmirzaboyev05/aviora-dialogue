@@ -9,6 +9,7 @@ type AuthContextValue = {
   workspace?: Workspace;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isPlatformStaff: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => void;
 };
@@ -30,6 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       workspace,
       isAuthenticated: hasToken,
       isLoading: meQuery.isLoading,
+      isPlatformStaff: Boolean(meQuery.data?.user.is_staff || meQuery.data?.user.is_superuser),
       signIn: async (email, password) => {
         await api.login(email, password);
         setHasToken(true);

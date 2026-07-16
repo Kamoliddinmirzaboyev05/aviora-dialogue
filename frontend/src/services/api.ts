@@ -1,4 +1,18 @@
-import type { Analytics, Conversation, Draft, Lead, MeResponse, Opportunity, Paginated, Workspace } from "../types/api";
+import type {
+  Analytics,
+  Conversation,
+  Draft,
+  Lead,
+  MeResponse,
+  Opportunity,
+  Paginated,
+  SuperadminEvent,
+  SuperadminIntegrations,
+  SuperadminOverview,
+  SuperadminUser,
+  SuperadminWorkspace,
+  Workspace
+} from "../types/api";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api/v1";
 
@@ -35,6 +49,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+function searchParam(search?: string) {
+  const trimmed = search?.trim();
+  return trimmed ? `?search=${encodeURIComponent(trimmed)}` : "";
+}
+
 export const api = {
   login: async (email: string, password: string) => {
     const result = await request<LoginResponse>("/auth/login/", {
@@ -45,6 +64,13 @@ export const api = {
     return result;
   },
   me: () => request<MeResponse>("/auth/me/"),
+  superadminOverview: () => request<SuperadminOverview>("/superadmin/overview/"),
+  superadminWorkspaces: (search?: string) =>
+    request<Paginated<SuperadminWorkspace>>(`/superadmin/workspaces/${searchParam(search)}`),
+  superadminUsers: (search?: string) =>
+    request<Paginated<SuperadminUser>>(`/superadmin/users/${searchParam(search)}`),
+  superadminIntegrations: () => request<SuperadminIntegrations>("/superadmin/integrations/"),
+  superadminEvents: () => request<Paginated<SuperadminEvent>>("/superadmin/events/"),
   workspaces: () => request<Paginated<Workspace>>("/workspaces/"),
   analytics: (workspace: string) => request<Analytics>(`/analytics/overview/?workspace=${workspace}`),
   opportunities: () => request<Paginated<Opportunity>>("/opportunities/"),

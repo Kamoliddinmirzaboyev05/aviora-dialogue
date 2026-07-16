@@ -6,7 +6,13 @@ export type Workspace = {
 };
 
 export type MeResponse = {
-  user: { id: string; email: string; full_name: string };
+  user: {
+    id: string;
+    email: string;
+    full_name: string;
+    is_staff: boolean;
+    is_superuser: boolean;
+  };
   memberships: Array<{ id: string; role: string; workspace: Workspace }>;
 };
 
@@ -69,4 +75,58 @@ export type Analytics = {
   consent_granted: number;
   leads: number;
   conversion_rate: number;
+};
+
+export type SuperadminOverview = {
+  users: number;
+  active_workspaces: number;
+  opportunities: number;
+  consent_grants: number;
+  leads: number;
+  telegram_connections: number;
+};
+
+export type SuperadminWorkspace = {
+  id: string;
+  name: string;
+  business_name: string;
+  industry: string;
+  is_active: boolean;
+  owner: string | null;
+  member_count: number;
+  lead_count: number;
+  plan: string | null;
+};
+
+export type SuperadminUser = {
+  id: string;
+  email: string;
+  full_name: string;
+  membership_count: number;
+  is_staff: boolean;
+  is_superuser: boolean;
+  last_login: string | null;
+};
+
+export type SuperadminIntegrations = {
+  ai: {
+    provider: string;
+    model: string;
+    credential_configured: boolean;
+    vertex_project_configured: boolean;
+  };
+  telegram: {
+    provider: string;
+    bot_token_configured: boolean;
+    webhook_secret_configured: boolean;
+    webhook_base_url_configured: boolean;
+  };
+};
+
+export type SuperadminEvent = {
+  id: string;
+  source: string;
+  workspace: string;
+  created_at: string;
+  summary: string;
 };
