@@ -128,3 +128,4 @@ def test_gemini_provider_discards_upstream_exception_cause(product):
         )
 
     assert error.value.__cause__ is None
+    assert error.value.__context__ is None

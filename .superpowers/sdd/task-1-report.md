@@ -104,3 +104,39 @@ Results:
 - Diff check: no whitespace errors.
 
 Implementation: changed the Gemini error boundary to `raise AIProviderError(...) from None`, so no upstream exception is retained as the public error's explicit cause or rendered through traceback chaining.
+
+## Security Follow-Up Evidence
+
+Second reviewer finding: raising from within the `except` block still retained the upstream exception as `AIProviderError.__context__`, despite using `from None`.
+
+Regression test strengthened: `test_gemini_provider_discards_upstream_exception_cause` now requires both `AIProviderError.__cause__` and `AIProviderError.__context__` to be `None` after an upstream `RuntimeError("credential=secret-token")`.
+
+### RED
+
+Command:
+
+```bash
+cd backend && ../.venv/bin/pytest tests/test_ai_providers.py -q
+```
+
+Result: `1 failed, 5 passed in 0.97s`. The failing assertion showed `RuntimeError('credential=secret-token')` remained as `AIProviderError.__context__`.
+
+### GREEN And Verification
+
+Commands:
+
+```bash
+cd backend && ../.venv/bin/pytest tests/test_ai_providers.py -q
+cd backend && ../.venv/bin/pytest -q
+cd backend && ../.venv/bin/ruff check apps/ai_engine/providers/gemini.py tests/test_ai_providers.py
+git diff --check
+```
+
+Results:
+
+- Focused provider suite: `6 passed in 0.78s`.
+- Full backend suite: `16 passed in 6.82s`.
+- Ruff: `All checks passed!`.
+- Diff check: no whitespace errors.
+
+Implementation: the handler now discards the upstream failure and exits the `except` block. The sanitized `AIProviderError` is raised afterward, so neither cause nor context retains the credential-bearing exception.
