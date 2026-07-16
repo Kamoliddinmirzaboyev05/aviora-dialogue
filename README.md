@@ -13,6 +13,7 @@ Local URLs:
 
 - Frontend: http://localhost:5173
 - Landing page: http://localhost:5174
+- Superadmin: http://localhost:5175
 - Backend API: http://localhost:8000/api/v1
 - API docs: http://localhost:8000/api/docs/
 
@@ -43,9 +44,9 @@ npm run dev
 
 ## Frontend Apps
 
-This repo contains two independent frontend apps.
+This repo contains three independent frontend apps.
 
-### Admin Dashboard
+### Workspace Dashboard
 
 ```bash
 cd frontend
@@ -53,7 +54,7 @@ npm install
 npm run dev
 ```
 
-The admin dashboard runs on `http://localhost:5173` and contains the authenticated workspace dashboard plus the staff-only `/app/superadmin` area.
+The workspace dashboard runs on `http://localhost:5173` and contains authenticated tenant/workspace operations.
 
 ### Landing Page
 
@@ -64,6 +65,16 @@ npm run dev
 ```
 
 The landing page runs on `http://localhost:5174`. Set `VITE_ADMIN_URL` when the landing app should link to a deployed admin dashboard instead of the local `/signin` path.
+
+### Superadmin
+
+```bash
+cd superadmin
+npm install
+npm run dev
+```
+
+The superadmin app runs on `http://localhost:5175`. It is a separate staff-only platform administration app with Uzbek UI text. Set `VITE_API_BASE_URL` when it should point to a deployed backend instead of `http://localhost:8000/api/v1`.
 
 ## Demo Flow
 
@@ -102,6 +113,8 @@ cd frontend && npm test
 cd frontend && npm run build
 cd landing && npm test
 cd landing && npm run build
+cd superadmin && npm test
+cd superadmin && npm run build
 docker compose config
 ```
 
