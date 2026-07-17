@@ -1,12 +1,58 @@
-import { useState } from "react";
-import { ArrowUpRight, Globe, Phone, Plus, Send } from "lucide-react";
+import { useEffect, useState, type CSSProperties } from "react";
+import {
+  ArrowUpRight,
+  Check,
+  CheckCheck,
+  Globe,
+  Phone,
+  Plus,
+  Radar,
+  Send,
+  ShieldCheck,
+  Sparkles,
+  UserCheck,
+  Zap
+} from "lucide-react";
 
 const adminUrl = import.meta.env.VITE_ADMIN_URL ?? "/signin";
+
+const delay = (ms: number): CSSProperties => ({ ["--reveal-delay" as string]: `${ms}ms` } as CSSProperties);
 
 const navLinks = [
   { label: "Biz haqimizda", href: "#biz-haqimizda" },
   { label: "Qanday ishlaydi", href: "#qanday-ishlaydi" },
-  { label: "Afzalliklar", href: "#afzalliklar" }
+  { label: "Afzalliklar", href: "#afzalliklar" },
+  { label: "Savollar", href: "#savollar" }
+];
+
+const stats = [
+  { value: "24/7", label: "to'xtovsiz kuzatuv" },
+  { value: "0", label: "spam xabar" },
+  { value: "3 daqiqa", label: "ulash va sozlash" },
+  { value: "100%", label: "rozilik bilan" }
+];
+
+const steps = [
+  {
+    icon: Radar,
+    title: "Kuzatadi",
+    text: "Botni Telegram guruhlaringizga ulaysiz — u tegishli suhbatlarni real vaqtda, tinch kuzatib boradi."
+  },
+  {
+    icon: Sparkles,
+    title: "Aniqlaydi",
+    text: "Mahsulotingiz yechadigan muammoni aytgan foydalanuvchilarni topadi va niyatini baholaydi."
+  },
+  {
+    icon: ShieldCheck,
+    title: "Rozilik so'raydi",
+    text: "Javob berishdan avval o'zini tanishtiradi va ruxsat so'raydi — hech kim bezovta bo'lmaydi."
+  },
+  {
+    icon: UserCheck,
+    title: "Lid yetkazadi",
+    text: "Rozilik olgach, tayyor va issiq lidni to'g'ridan-to'g'ri menejeringizga uzatadi."
+  }
 ];
 
 const features = [
@@ -71,6 +117,29 @@ const faqs = [
   }
 ];
 
+function useScrollReveal() {
+  useEffect(() => {
+    const els = Array.from(document.querySelectorAll<HTMLElement>(".reveal"));
+    if (!("IntersectionObserver" in window)) {
+      els.forEach((el) => el.classList.add("is-visible"));
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            io.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
+    );
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+}
+
 function Logo() {
   return (
     <span className="flex items-center gap-2.5">
@@ -113,14 +182,53 @@ function Nav() {
   );
 }
 
+function ChatMock() {
+  return (
+    <div className="reveal relative w-full max-w-sm" style={delay(120)}>
+      <div className="pointer-events-none absolute -inset-6 -z-10 animate-float rounded-full bg-gradient-to-br from-glow/40 via-violet/40 to-transparent blur-3xl" />
+      <div className="overflow-hidden rounded-3xl border border-white/10 bg-panel/80 shadow-2xl shadow-black/50 backdrop-blur">
+        <div className="flex items-center gap-3 border-b border-white/10 bg-white/5 px-5 py-3.5">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-glow to-violet text-sm font-bold text-white">A</span>
+          <div className="leading-tight">
+            <p className="text-sm font-semibold text-white">IT-xizmatlar guruhi</p>
+            <p className="flex items-center gap-1 text-xs text-emerald-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Aviora yordamchi faol
+            </p>
+          </div>
+        </div>
+        <div className="space-y-3 p-5">
+          <div className="max-w-[80%] rounded-2xl rounded-tl-sm bg-white/10 px-4 py-2.5 text-sm text-slate-100">
+            Kimda yaxshi CRM bor? Excel'dan charchadim 😩
+          </div>
+          <div className="ml-auto max-w-[86%] rounded-2xl rounded-tr-sm bg-gradient-to-br from-violet to-glow px-4 py-2.5 text-sm text-white">
+            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-white/70">Aviora yordamchi</span>
+            Ruxsatingiz bilan mos yechimni tavsiya qilsam bo'ladimi?
+            <span className="mt-1 flex items-center justify-end gap-1 text-[10px] text-white/70">10:24 <CheckCheck size={12} /></span>
+          </div>
+          <div className="max-w-[70%] rounded-2xl rounded-tl-sm bg-white/10 px-4 py-2.5 text-sm text-slate-100">Ha, mayli 👍</div>
+          <div className="flex flex-wrap gap-2 pt-1">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-300">
+              <Check size={13} /> Rozilik olindi
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-violet/30 bg-violet/10 px-3 py-1 text-xs font-medium text-violet">
+              <Sparkles size={13} /> Yangi lid yaratildi
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Hero() {
   return (
     <section id="biz-haqimizda" className="relative overflow-hidden">
-      <div className="pointer-events-none absolute -top-40 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-violet/20 blur-[130px]" />
-      <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-5 py-20 md:grid-cols-[1.1fr_0.9fr] md:px-8 md:py-28">
-        <div>
+      <div className="dotgrid pointer-events-none absolute inset-0" />
+      <div className="pointer-events-none absolute -top-40 left-1/2 h-[520px] w-[720px] -translate-x-1/2 rounded-full bg-violet/20 blur-[140px]" />
+      <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-5 py-20 md:grid-cols-[1.05fr_0.95fr] md:px-8 md:py-28">
+        <div className="reveal">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-slate-200">
-            <span className="h-1.5 w-1.5 rounded-full bg-glow" /> Roziligizga asoslangan avtomatlashtirish
+            <span className="h-1.5 w-1.5 rounded-full bg-glow" /> Telegram uchun rozilikka asoslangan sotuv yordamchisi
           </span>
           <h1 className="mt-6 text-5xl font-extrabold leading-[1.05] tracking-tight text-white md:text-6xl">
             Aviora Dialogue
@@ -144,12 +252,51 @@ function Hero() {
             </a>
           </div>
         </div>
-        <div className="relative flex justify-center md:justify-end">
-          <div className="relative h-72 w-72 animate-float md:h-96 md:w-96">
-            <div className="absolute inset-0 rounded-[46%_54%_60%_40%/45%_50%_50%_55%] bg-gradient-to-br from-glow via-violet to-[#1b1444] blur-2xl opacity-70" />
-            <div className="absolute inset-6 rounded-[52%_48%_42%_58%/50%_45%_55%_50%] bg-gradient-to-tr from-white/90 via-glow to-violet opacity-90" />
-          </div>
+        <div className="flex justify-center md:justify-end">
+          <ChatMock />
         </div>
+      </div>
+
+      <div className="relative mx-auto grid max-w-6xl gap-px overflow-hidden rounded-2xl border border-stroke bg-stroke sm:grid-cols-2 md:mx-8 md:grid-cols-4 lg:mx-auto">
+        {stats.map((s, i) => (
+          <div key={s.label} className="reveal bg-deep px-6 py-7 text-center" style={delay(i * 70)}>
+            <p className="bg-gradient-to-r from-white to-slate-300 bg-clip-text text-3xl font-extrabold tracking-tight text-transparent">
+              {s.value}
+            </p>
+            <p className="mt-1 text-sm text-slate-400">{s.label}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function Steps() {
+  return (
+    <section id="qanday-ishlaydi" className="mx-auto max-w-6xl px-5 py-16 md:px-8 md:py-24">
+      <div className="reveal max-w-2xl">
+        <span className="text-sm font-semibold uppercase tracking-wider text-violet">Qanday ishlaydi</span>
+        <h2 className="mt-3 text-4xl font-extrabold leading-tight tracking-tight text-white md:text-5xl">
+          Suhbatdan issiq lidgacha — to'rt qadam
+        </h2>
+      </div>
+      <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {steps.map((step, i) => (
+          <article
+            key={step.title}
+            className="reveal group relative rounded-2xl border border-stroke bg-panel/50 p-6 transition hover:border-violet/40 hover:bg-panel"
+            style={delay(i * 90)}
+          >
+            <span className="absolute right-5 top-5 text-2xl font-black text-white/10 transition group-hover:text-violet/30">
+              0{i + 1}
+            </span>
+            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet/20 to-glow/10 text-violet">
+              <step.icon size={22} />
+            </span>
+            <h3 className="mt-5 text-lg font-bold text-white">{step.title}</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-400">{step.text}</p>
+          </article>
+        ))}
       </div>
     </section>
   );
@@ -158,19 +305,21 @@ function Hero() {
 function Features() {
   return (
     <section id="afzalliklar" className="mx-auto max-w-6xl px-5 py-16 md:px-8 md:py-24">
-      <h2 className="max-w-md text-4xl font-extrabold leading-tight tracking-tight text-white md:text-5xl">
+      <h2 className="reveal max-w-md text-4xl font-extrabold leading-tight tracking-tight text-white md:text-5xl">
         Aviora Dialogue afzalliklari
       </h2>
       <div className="mt-12 grid gap-5 md:grid-cols-2">
-        {features.map((f) => (
+        {features.map((f, i) => (
           <article
             key={f.title}
-            className="group relative flex min-h-[280px] flex-col justify-between rounded-2xl border border-stroke bg-panel/60 p-7 transition hover:border-violet/50 hover:bg-panel"
+            className="reveal group relative flex min-h-[280px] flex-col justify-between overflow-hidden rounded-2xl border border-stroke bg-panel/60 p-7 transition hover:border-violet/50 hover:bg-panel"
+            style={delay((i % 2) * 90)}
           >
-            <span className="flex h-11 w-11 items-center justify-center self-end rounded-full border border-white/10 bg-white/5 text-slate-200 transition group-hover:bg-violet group-hover:text-white">
+            <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-violet/10 opacity-0 blur-2xl transition group-hover:opacity-100" />
+            <span className="relative flex h-11 w-11 items-center justify-center self-end rounded-full border border-white/10 bg-white/5 text-slate-200 transition group-hover:bg-violet group-hover:text-white">
               <ArrowUpRight size={18} />
             </span>
-            <div>
+            <div className="relative">
               <p className="text-[15px] leading-7 text-slate-400">{f.text}</p>
               <h3 className="mt-6 text-xl font-bold text-white">{f.title}</h3>
             </div>
@@ -184,8 +333,8 @@ function Features() {
 function Faq() {
   const [open, setOpen] = useState<number | null>(0);
   return (
-    <section id="qanday-ishlaydi" className="mx-auto max-w-6xl px-5 py-16 md:px-8 md:py-24">
-      <div className="rounded-3xl border border-stroke bg-panel/40 p-6 md:grid md:grid-cols-[0.8fr_1.2fr] md:gap-10 md:p-12">
+    <section id="savollar" className="mx-auto max-w-6xl px-5 py-16 md:px-8 md:py-24">
+      <div className="reveal rounded-3xl border border-stroke bg-panel/40 p-6 md:grid md:grid-cols-[0.8fr_1.2fr] md:gap-10 md:p-12">
         <h2 className="text-4xl font-extrabold leading-tight tracking-tight text-white md:text-5xl">
           Tez-tez beriladigan{" "}
           <span className="bg-gradient-to-r from-violet to-glow bg-clip-text text-transparent">Savollar</span>
@@ -223,6 +372,29 @@ function Faq() {
   );
 }
 
+function CtaBand() {
+  return (
+    <section className="mx-auto max-w-6xl px-5 pb-8 md:px-8">
+      <div className="reveal relative overflow-hidden rounded-3xl border border-violet/30 bg-gradient-to-br from-violet/20 via-panel to-deep px-6 py-14 text-center md:px-16">
+        <div className="pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full bg-glow/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -right-16 h-64 w-64 rounded-full bg-violet/20 blur-3xl" />
+        <h2 className="relative mx-auto max-w-2xl text-3xl font-extrabold leading-tight tracking-tight text-white md:text-4xl">
+          Bugun birinchi issiq lidingizni oling
+        </h2>
+        <p className="relative mx-auto mt-4 max-w-xl text-slate-300">
+          Botni guruhingizga ulang, mahsulotingizni kiriting — qolganini Aviora Dialogue bajaradi.
+        </p>
+        <a
+          href={adminUrl}
+          className="relative mt-8 inline-flex items-center justify-center gap-2 rounded-xl bg-violet px-7 py-4 font-semibold text-white shadow-lg shadow-violet/30 transition hover:bg-violet/90"
+        >
+          <Zap size={18} /> Bepul boshlash
+        </a>
+      </div>
+    </section>
+  );
+}
+
 function Footer() {
   return (
     <footer className="border-t border-white/5 bg-deep">
@@ -235,7 +407,7 @@ function Footer() {
         </div>
         <div className="flex flex-col gap-3 text-sm md:items-end">
           <div className="flex flex-wrap gap-x-6 gap-y-2 md:justify-end">
-            {[...navLinks, { label: "Savollar", href: "#qanday-ishlaydi" }].map((l) => (
+            {navLinks.map((l) => (
               <a key={l.label} href={l.href} className="font-medium text-slate-300 transition hover:text-white">
                 {l.label}
               </a>
@@ -265,12 +437,15 @@ function Footer() {
 }
 
 export function App() {
+  useScrollReveal();
   return (
     <main className="min-h-screen bg-night text-slate-100">
       <Nav />
       <Hero />
+      <Steps />
       <Features />
       <Faq />
+      <CtaBand />
       <Footer />
     </main>
   );

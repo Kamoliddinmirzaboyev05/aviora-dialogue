@@ -1,7 +1,7 @@
 import { FormEvent, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createBrowserRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom";
-import { AlertTriangle, CheckCircle2, LogOut, Search, ShieldCheck, Sparkles, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Eye, EyeOff, LogOut, Search, ShieldCheck, Sparkles, XCircle } from "lucide-react";
 
 import { api, tokenStore } from "./services/api";
 import type { PlatformOverview } from "./types/api";
@@ -42,6 +42,7 @@ function SignInPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -79,7 +80,22 @@ function SignInPage() {
           </label>
           <label className="block text-sm font-medium">
             Parol
-            <input className="mt-1 w-full rounded-md border border-line px-3 py-2 outline-emerald" type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
+            <div className="relative mt-1">
+              <input
+                className="w-full rounded-md border border-line px-3 py-2 pr-10 outline-emerald"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "Parolni yashirish" : "Parolni ko'rsatish"}
+                className="absolute inset-y-0 right-0 grid w-10 place-items-center rounded-md text-muted hover:text-ink"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </label>
           {error && <p className="rounded-md bg-red-50 p-3 text-sm text-danger">{error}</p>}
           <button className="w-full rounded-md bg-emerald px-4 py-2 font-semibold text-white" disabled={loading}>
