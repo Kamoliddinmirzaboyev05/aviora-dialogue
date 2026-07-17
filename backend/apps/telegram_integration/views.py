@@ -74,7 +74,7 @@ class TelegramWebhookView(APIView):
             or not secrets.compare_digest(supplied_secret, expected_secret)
         ):
             return api_error(
-                "invalid_webhook_secret", "Webhook authentication failed.", status=403
+                "invalid_webhook_secret", "Webhook autentifikatsiyasi muvaffaqiyatsiz tugadi.", status=403
             )
 
         connection = (
@@ -85,7 +85,7 @@ class TelegramWebhookView(APIView):
         if not connection:
             return api_error(
                 "telegram_connection_not_found",
-                "Telegram connection was not found.",
+                "Telegram ulanishi topilmadi.",
                 status=404,
             )
 
@@ -106,7 +106,7 @@ class TelegramConnectionTestView(APIView):
         except (TelegramConfigurationError, TelegramProviderError):
             return api_error(
                 "telegram_connection_failed",
-                "Telegram provider connection test failed.",
+                "Telegram provayder ulanish testi muvaffaqiyatsiz tugadi.",
                 status=503,
             )
 
@@ -138,14 +138,14 @@ class TelegramWebhookRegistrationView(APIView):
                 connection_id = UUID(str(connection_id))
             except (AttributeError, TypeError, ValueError):
                 return api_error(
-                    "invalid_connection", "Connection must be a valid UUID.", status=400
+                    "invalid_connection", "Ulanish yaroqli UUID bo'lishi kerak.", status=400
                 )
             queryset = queryset.filter(id=connection_id)
         connection = queryset.order_by("created_at").first()
         if not connection:
             return api_error(
                 "telegram_connection_not_found",
-                "Active Telegram connection was not found.",
+                "Faol Telegram ulanishi topilmadi.",
                 status=404,
             )
 
@@ -154,7 +154,7 @@ class TelegramWebhookRegistrationView(APIView):
         if not webhook_secret or not webhook_base_url:
             return api_error(
                 "telegram_configuration_error",
-                "Telegram webhook configuration is incomplete.",
+                "Telegram webhook sozlamasi to'liq emas.",
                 status=503,
             )
 
@@ -171,13 +171,13 @@ class TelegramWebhookRegistrationView(APIView):
                 )
         except (TelegramConfigurationError, TelegramProviderError):
             connection.webhook_status = "error"
-            connection.last_error = "Telegram webhook registration failed."
+            connection.last_error = "Telegram webhook ro'yxatdan o'tkazish muvaffaqiyatsiz tugadi."
             connection.save(
                 update_fields=["webhook_status", "last_error", "updated_at"]
             )
             return api_error(
                 "telegram_webhook_failed",
-                "Telegram webhook registration failed.",
+                "Telegram webhook ro'yxatdan o'tkazish muvaffaqiyatsiz tugadi.",
                 status=503,
             )
 
@@ -195,7 +195,7 @@ def _workspace_admin(request):
         workspace_id = UUID(str(request.data.get("workspace")))
     except (AttributeError, TypeError, ValueError):
         return None, api_error(
-            "invalid_workspace", "Workspace must be a valid UUID.", status=400
+            "invalid_workspace", "Ish maydoni yaroqli UUID bo'lishi kerak.", status=400
         )
 
     membership = (
@@ -212,7 +212,7 @@ def _workspace_admin(request):
     if not membership:
         return None, api_error(
             "workspace_admin_required",
-            "Workspace owner or admin access is required.",
+            "Ish maydoni egasi yoki admin ruxsati talab qilinadi.",
             status=403,
         )
     return membership, None

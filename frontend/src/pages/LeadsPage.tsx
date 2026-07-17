@@ -7,6 +7,15 @@ import { EmptyState } from "../components/ui/EmptyState";
 import { api } from "../services/api";
 import { useAuth } from "../features/auth/AuthProvider";
 
+const statusLabels: Record<string, string> = {
+  new: "Yangi",
+  qualified: "Malakali",
+  contacted: "Bog'lanildi",
+  meeting_scheduled: "Uchrashuv rejalashtirilgan",
+  won: "Yutildi",
+  lost: "Yo'qotildi"
+};
+
 export function LeadsPage() {
   const { workspace } = useAuth();
   const queryClient = useQueryClient();
@@ -29,10 +38,10 @@ export function LeadsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
-        <h1 className="text-2xl font-semibold">Leads</h1>
-        <Button disabled={!convertible || convert.isPending} onClick={() => convertible && convert.mutate(convertible.id)}>Convert latest consent</Button>
+        <h1 className="text-2xl font-semibold">Lidlar</h1>
+        <Button disabled={!convertible || convert.isPending} onClick={() => convertible && convert.mutate(convertible.id)}>So'nggi rozilikni konvertatsiya qilish</Button>
       </div>
-      {!leads.data?.results.length && <EmptyState title="No leads yet. Grant consent in a conversation, then convert it." />}
+      {!leads.data?.results.length && <EmptyState title="Hali lidlar yo'q. Suhbatda rozilik bering, so'ng uni konvertatsiya qiling." />}
       <div className="grid gap-4 lg:grid-cols-3">
         {leads.data?.results.map((lead) => (
           <Card key={lead.id}>
@@ -43,7 +52,7 @@ export function LeadsPage() {
               </div>
               <p className="text-sm text-slate-600">{lead.detected_need}</p>
               <select className="focus-ring w-full rounded-md border border-line px-3 py-2 text-sm" value={lead.status} onChange={(event) => update.mutate({ id: lead.id, status: event.target.value })}>
-                {["new", "qualified", "contacted", "meeting_scheduled", "won", "lost"].map((status) => <option key={status} value={status}>{status}</option>)}
+                {["new", "qualified", "contacted", "meeting_scheduled", "won", "lost"].map((status) => <option key={status} value={status}>{statusLabels[status]}</option>)}
               </select>
             </div>
           </Card>

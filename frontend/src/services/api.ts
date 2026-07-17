@@ -18,6 +18,15 @@ type LoginResponse = {
   refresh: string;
 };
 
+export class ApiError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 export const tokenStore = {
   get access() {
     return localStorage.getItem("accessToken");
@@ -41,7 +50,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, { ...options, headers });
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
-    throw new Error(error.error?.message ?? "Request failed");
+    throw new ApiError(response.status, error.error?.message ?? "So'rov bajarilmadi");
   }
   return response.json() as Promise<T>;
 }

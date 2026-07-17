@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { api, tokenStore } from "../../services/api";
+import { api, tokenStore, ApiError } from "../../services/api";
 import type { MeResponse, Workspace } from "../../types/api";
 
 type AuthContextValue = {
@@ -42,11 +42,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [hasToken, meQuery.data, meQuery.isLoading]);
 
   useEffect(() => {
-    if (meQuery.isError) {
+    // Only end the session on an auth failure — a transient 500/network blip must not log the user out.
+    const error = meQuery.error;
+    if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
       tokenStore.clear();
       setHasToken(false);
     }
-  }, [meQuery.isError]);
+  }, [meQuery.error]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

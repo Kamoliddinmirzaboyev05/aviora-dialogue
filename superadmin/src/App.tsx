@@ -40,8 +40,8 @@ function AccessDenied() {
 
 function SignInPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("staff@example.com");
-  const [password, setPassword] = useState("ChangeMe123!");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -153,7 +153,7 @@ function DashboardPage() {
             <h2 className="mb-4 font-semibold">AI integratsiyasi</h2>
             {integrations.data && (
               <dl className="grid gap-3 text-sm">
-                <div className="flex justify-between"><dt className="text-muted">Provider</dt><dd>{integrations.data.ai.provider}</dd></div>
+                <div className="flex justify-between"><dt className="text-muted">Provayder</dt><dd>{integrations.data.ai.provider}</dd></div>
                 <div className="flex justify-between"><dt className="text-muted">Model</dt><dd>{integrations.data.ai.model}</dd></div>
                 <div className="flex justify-between"><dt className="text-muted">Kalit</dt><dd><StatusMark ok={integrations.data.ai.credential_configured} /></dd></div>
                 <div className="flex justify-between"><dt className="text-muted">Vertex loyiha</dt><dd><StatusMark ok={integrations.data.ai.vertex_project_configured} /></dd></div>
@@ -164,7 +164,7 @@ function DashboardPage() {
             <h2 className="mb-4 font-semibold">Telegram integratsiyasi</h2>
             {integrations.data && (
               <dl className="grid gap-3 text-sm">
-                <div className="flex justify-between"><dt className="text-muted">Provider</dt><dd>{integrations.data.telegram.provider}</dd></div>
+                <div className="flex justify-between"><dt className="text-muted">Provayder</dt><dd>{integrations.data.telegram.provider}</dd></div>
                 <div className="flex justify-between"><dt className="text-muted">Bot token</dt><dd><StatusMark ok={integrations.data.telegram.bot_token_configured} /></dd></div>
                 <div className="flex justify-between"><dt className="text-muted">Webhook sir</dt><dd><StatusMark ok={integrations.data.telegram.webhook_secret_configured} /></dd></div>
                 <div className="flex justify-between"><dt className="text-muted">Webhook URL</dt><dd><StatusMark ok={integrations.data.telegram.webhook_base_url_configured} /></dd></div>

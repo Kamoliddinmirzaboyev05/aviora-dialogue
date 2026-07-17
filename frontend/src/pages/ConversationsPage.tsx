@@ -6,6 +6,7 @@ import { Button } from "../components/ui/Button";
 import { Card, CardTitle } from "../components/ui/Card";
 import { EmptyState } from "../components/ui/EmptyState";
 import { api } from "../services/api";
+import { consentStatusLabels, statusLabel } from "../lib/statusLabels";
 
 export function ConversationsPage() {
   const queryClient = useQueryClient();
@@ -13,7 +14,7 @@ export function ConversationsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = conversations.data?.results.find((conversation) => conversation.id === (selectedId ?? conversations.data?.results[0]?.id));
   const consent = useMutation({
-    mutationFn: (id: string) => api.simulateConsent(id, "Yes, please send me more information."),
+    mutationFn: (id: string) => api.simulateConsent(id, "Ha, iltimos menga ko'proq ma'lumot yuboring."),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["conversations"] })
   });
   const generate = useMutation({
@@ -23,14 +24,14 @@ export function ConversationsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Conversations</h1>
-      {!conversations.data?.results.length && <EmptyState title="Approve a permission request to start a conversation." />}
+      <h1 className="text-2xl font-semibold">Suhbatlar</h1>
+      {!conversations.data?.results.length && <EmptyState title="Suhbatni boshlash uchun ruxsat so'rovini tasdiqlang." />}
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
         <div className="space-y-2">
           {conversations.data?.results.map((conversation) => (
             <button key={conversation.id} className="focus-ring w-full rounded-md border border-line bg-white p-3 text-left text-sm" onClick={() => setSelectedId(conversation.id)}>
               <span className="font-medium">{conversation.contact_name}</span>
-              <p className="text-xs text-slate-500">{conversation.consent_status}</p>
+              <p className="text-xs text-slate-500">{statusLabel(consentStatusLabels, conversation.consent_status)}</p>
             </button>
           ))}
         </div>
@@ -41,7 +42,7 @@ export function ConversationsPage() {
                 <CardTitle>{selected.contact_name}</CardTitle>
                 <p className="text-sm text-slate-600">{selected.chat_title} · {selected.product_name}</p>
               </div>
-              <Badge tone={selected.consent_status === "granted" ? "green" : "amber"}>{selected.consent_status}</Badge>
+              <Badge tone={selected.consent_status === "granted" ? "green" : "amber"}>{statusLabel(consentStatusLabels, selected.consent_status)}</Badge>
             </div>
             <div className="space-y-3">
               {selected.messages.map((message) => (
@@ -52,8 +53,8 @@ export function ConversationsPage() {
               ))}
             </div>
             <div className="mt-5 flex flex-wrap gap-2">
-              <Button variant="secondary" onClick={() => consent.mutate(selected.id)} disabled={consent.isPending || selected.consent_status === "granted"}>Simulate consent</Button>
-              <Button onClick={() => generate.mutate(selected.id)} disabled={generate.isPending || selected.consent_status !== "granted"}>Generate response</Button>
+              <Button variant="secondary" onClick={() => consent.mutate(selected.id)} disabled={consent.isPending || selected.consent_status === "granted"}>Rozilikni simulyatsiya qilish</Button>
+              <Button onClick={() => generate.mutate(selected.id)} disabled={generate.isPending || selected.consent_status !== "granted"}>Javob yaratish</Button>
             </div>
           </Card>
         )}

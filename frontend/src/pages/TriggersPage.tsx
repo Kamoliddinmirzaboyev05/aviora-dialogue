@@ -8,7 +8,7 @@ export function TriggersPage() {
   const triggers = useQuery({ queryKey: ["triggers"], queryFn: api.triggers });
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Triggers</h1>
+      <h1 className="text-2xl font-semibold">Triggerlar</h1>
       <div className="space-y-3">
         {triggers.data?.results.map((trigger) => (
           <Card key={String(trigger.id)}>

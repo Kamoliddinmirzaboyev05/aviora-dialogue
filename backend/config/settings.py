@@ -7,9 +7,14 @@ import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-secret-change-me-with-at-least-32-bytes")
-DEBUG = os.getenv("DJANGO_DEBUG", "true").lower() == "true"
+_DEV_SECRET = "dev-secret-change-me-with-at-least-32-bytes"
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", _DEV_SECRET)
+DEBUG = os.getenv("DJANGO_DEBUG", "false").lower() == "true"
 ALLOWED_HOSTS = [host.strip() for host in os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if host.strip()]
+
+# Fail fast in production if the placeholder secret was never replaced.
+if not DEBUG and SECRET_KEY == _DEV_SECRET:
+    raise RuntimeError("DJANGO_SECRET_KEY must be set to a strong unique value when DEBUG is off.")
 
 INSTALLED_APPS = [
     "django.contrib.admin",

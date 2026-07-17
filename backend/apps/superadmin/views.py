@@ -159,7 +159,7 @@ class RecentEventsView(APIView):
             workspace_name=F("workspace__name"),
             event_at=F("created_at"),
             event_summary=Concat(
-                Value("AI "), F("purpose"), Value(" request failed."), output_field=CharField()
+                Value("AI "), F("purpose"), Value(" so'rovi bajarilmadi."), output_field=CharField()
             ),
         ).values("id", "source", "workspace_name", "event_at", "event_summary")
         telegram_errors = TelegramConnection.objects.exclude(last_error="").annotate(
@@ -167,7 +167,7 @@ class RecentEventsView(APIView):
             workspace_name=F("workspace__name"),
             event_at=F("updated_at"),
             event_summary=Value(
-                "Telegram connection has a recorded error.", output_field=CharField()
+                "Telegram ulanishida qayd etilgan xatolik bor.", output_field=CharField()
             ),
         ).values("id", "source", "workspace_name", "event_at", "event_summary")
         audit_events = AuditLog.objects.annotate(

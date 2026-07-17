@@ -6,6 +6,7 @@ import { Button } from "../components/ui/Button";
 import { Card, CardTitle } from "../components/ui/Card";
 import { EmptyState } from "../components/ui/EmptyState";
 import { api } from "../services/api";
+import { draftStatusLabels, statusLabel } from "../lib/statusLabels";
 
 export function ApprovalsPage() {
   const queryClient = useQueryClient();
@@ -21,8 +22,8 @@ export function ApprovalsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Approval Queue</h1>
-      {!approvals.data?.results.length && <EmptyState title="No drafts are waiting for review." />}
+      <h1 className="text-2xl font-semibold">Tasdiqlash navbati</h1>
+      {!approvals.data?.results.length && <EmptyState title="Ko'rib chiqish uchun qoralamalar yo'q." />}
       <div className="space-y-4">
         {approvals.data?.results.map((draft) => (
           <Card key={draft.id}>
@@ -31,10 +32,10 @@ export function ApprovalsPage() {
                 <CardTitle>{draft.opportunity.contact_name}</CardTitle>
                 <p className="text-sm text-slate-600">{draft.opportunity.source_message}</p>
                 <div className="rounded-md bg-panel p-4 text-sm">{draft.text}</div>
-                <div className="flex gap-2"><Badge tone="amber">{draft.status}</Badge><Badge>{draft.opportunity.relevance_score}</Badge></div>
+                <div className="flex gap-2"><Badge tone="amber">{statusLabel(draftStatusLabels, draft.status)}</Badge><Badge>{draft.opportunity.relevance_score}</Badge></div>
               </div>
               <div className="flex min-w-52 items-start gap-2">
-                {draft.status === "draft" ? <Button onClick={() => approve.mutate(draft.id)} disabled={approve.isPending}>Approve</Button> : <Link to="/app/conversations"><Button variant="secondary">Conversation</Button></Link>}
+                {draft.status === "draft" ? <Button onClick={() => approve.mutate(draft.id)} disabled={approve.isPending}>Tasdiqlash</Button> : <Link to="/app/conversations"><Button variant="secondary">Suhbat</Button></Link>}
               </div>
             </div>
           </Card>

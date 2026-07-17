@@ -9,8 +9,8 @@ import { useAuth } from "./AuthProvider";
 export function SignInPage() {
   const auth = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("owner@example.com");
-  const [password, setPassword] = useState("ChangeMe123!");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -24,7 +24,7 @@ export function SignInPage() {
       await auth.signIn(email, password);
       navigate("/app");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Sign in failed");
+      setError(err instanceof Error ? err.message : "Kirishda xatolik");
     } finally {
       setLoading(false);
     }
@@ -38,8 +38,8 @@ export function SignInPage() {
             <Bot size={22} />
           </div>
           <div>
-            <h1 className="text-xl font-semibold">Ethical Dialogue AI</h1>
-            <p className="text-sm text-slate-600">Workspace dashboard</p>
+            <h1 className="text-xl font-semibold">Aviora Dialogue</h1>
+            <p className="text-sm text-slate-600">Ish maydoni boshqaruv paneli</p>
           </div>
         </div>
         <form onSubmit={submit} className="space-y-4">
@@ -48,11 +48,11 @@ export function SignInPage() {
             <input className="focus-ring mt-1 w-full rounded-md border border-line px-3 py-2" value={email} onChange={(event) => setEmail(event.target.value)} />
           </label>
           <label className="block text-sm font-medium">
-            Password
+            Parol
             <input className="focus-ring mt-1 w-full rounded-md border border-line px-3 py-2" type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
           </label>
           {error && <p className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-          <Button className="w-full" disabled={loading}>{loading ? "Signing in" : "Sign in"}</Button>
+          <Button className="w-full" disabled={loading}>{loading ? "Kirilmoqda" : "Kirish"}</Button>
         </form>
       </Card>
     </main>

@@ -5,16 +5,16 @@ import { Button } from "../components/ui/Button";
 import { useAuth } from "../features/auth/AuthProvider";
 
 const nav = [
-  { to: "/app", label: "Overview", icon: Activity },
+  { to: "/app", label: "Umumiy ko'rinish", icon: Activity },
   { to: "/app/telegram", label: "Telegram", icon: Radio },
-  { to: "/app/simulator", label: "Simulator", icon: Bot },
-  { to: "/app/opportunities", label: "Opportunities", icon: Target },
-  { to: "/app/approvals", label: "Approval Queue", icon: CheckSquare },
-  { to: "/app/conversations", label: "Conversations", icon: MessageSquare },
-  { to: "/app/leads", label: "Leads", icon: Users },
-  { to: "/app/products", label: "Products", icon: Package },
-  { to: "/app/triggers", label: "Triggers", icon: Settings },
-  { to: "/app/analytics", label: "Analytics", icon: LineChart }
+  { to: "/app/simulator", label: "Simulyator", icon: Bot },
+  { to: "/app/opportunities", label: "Imkoniyatlar", icon: Target },
+  { to: "/app/approvals", label: "Tasdiqlash navbati", icon: CheckSquare },
+  { to: "/app/conversations", label: "Suhbatlar", icon: MessageSquare },
+  { to: "/app/leads", label: "Lidlar", icon: Users },
+  { to: "/app/products", label: "Mahsulotlar", icon: Package },
+  { to: "/app/triggers", label: "Triggerlar", icon: Settings },
+  { to: "/app/analytics", label: "Analitika", icon: LineChart }
 ];
 
 export function DashboardLayout() {
@@ -29,8 +29,8 @@ export function DashboardLayout() {
             <Bot size={21} />
           </div>
           <div>
-            <p className="text-sm font-semibold">Ethical Dialogue AI</p>
-            <p className="text-xs text-slate-500">{auth.workspace?.name ?? "Workspace"}</p>
+            <p className="text-sm font-semibold">Aviora Dialogue</p>
+            <p className="text-xs text-slate-500">{auth.workspace?.name ?? "Ish maydoni"}</p>
           </div>
         </div>
         <nav className="space-y-1">
@@ -52,10 +52,10 @@ export function DashboardLayout() {
       <div className="md:pl-64">
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-line bg-white px-4 md:px-8">
           <div>
-            <p className="text-sm font-medium">{auth.workspace?.business_name ?? "Demo workspace"}</p>
+            <p className="text-sm font-medium">{auth.workspace?.business_name ?? "Demo ish maydoni"}</p>
             <p className="text-xs text-slate-500">{auth.me?.user.email}</p>
           </div>
-          <Button variant="secondary" onClick={auth.signOut}>Sign out</Button>
+          <Button variant="secondary" onClick={auth.signOut}>Chiqish</Button>
         </header>
         <main className="mx-auto max-w-7xl p-4 md:p-8">
           <Outlet />

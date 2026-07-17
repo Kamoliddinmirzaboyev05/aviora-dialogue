@@ -10,16 +10,16 @@ export function AnalyticsPage() {
   const analytics = useQuery({ queryKey: ["analytics", workspace?.id], queryFn: () => api.analytics(workspace!.id), enabled: Boolean(workspace) });
   const data = analytics.data
     ? [
-        { name: "Opportunities", value: analytics.data.opportunities },
-        { name: "Consent", value: analytics.data.consent_granted },
-        { name: "Leads", value: analytics.data.leads }
+        { name: "Imkoniyatlar", value: analytics.data.opportunities },
+        { name: "Rozilik", value: analytics.data.consent_granted },
+        { name: "Lidlar", value: analytics.data.leads }
       ]
     : [];
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Analytics</h1>
+      <h1 className="text-2xl font-semibold">Analitika</h1>
       <Card>
-        <CardTitle>Consent funnel</CardTitle>
+        <CardTitle>Rozilik voronkasi</CardTitle>
         <div className="mt-4 h-80">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data}>

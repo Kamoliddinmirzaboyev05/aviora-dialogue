@@ -4,13 +4,14 @@ import { Badge } from "../components/ui/Badge";
 import { Card } from "../components/ui/Card";
 import { EmptyState } from "../components/ui/EmptyState";
 import { api } from "../services/api";
+import { opportunityStatusLabels, statusLabel } from "../lib/statusLabels";
 
 export function OpportunitiesPage() {
   const opportunities = useQuery({ queryKey: ["opportunities"], queryFn: api.opportunities });
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Opportunities</h1>
-      {!opportunities.data?.results.length && <EmptyState title="No opportunities yet. Run the simulator to create one." />}
+      <h1 className="text-2xl font-semibold">Imkoniyatlar</h1>
+      {!opportunities.data?.results.length && <EmptyState title="Hali imkoniyatlar yo'q. Bittasini yaratish uchun simulyatorni ishga tushiring." />}
       <div className="space-y-3">
         {opportunities.data?.results.map((item) => (
           <Card key={item.id}>
@@ -20,7 +21,7 @@ export function OpportunitiesPage() {
                 <p className="text-sm text-slate-600">{item.source_message}</p>
                 <p className="mt-2 text-sm">{item.concise_reason}</p>
               </div>
-              <div className="flex gap-2"><Badge>{item.status}</Badge><Badge tone="green">{item.relevance_score}</Badge></div>
+              <div className="flex gap-2"><Badge>{statusLabel(opportunityStatusLabels, item.status)}</Badge><Badge tone="green">{item.relevance_score}</Badge></div>
             </div>
           </Card>
         ))}

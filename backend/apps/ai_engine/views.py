@@ -24,15 +24,15 @@ class AIConnectionTestView(APIView):
         try:
             workspace_id = UUID(str(request.data.get("workspace")))
         except (AttributeError, TypeError, ValueError):
-            return api_error("invalid_workspace", "Workspace must be a valid UUID.", status=400)
+            return api_error("invalid_workspace", "Ish maydoni yaroqli UUID bo'lishi kerak.", status=400)
 
         membership = get_workspace_admin_membership(request, workspace_id)
         if not membership:
-            return api_error("workspace_admin_required", "Workspace owner or admin access is required.", status=403)
+            return api_error("workspace_admin_required", "Ish maydoni egasi yoki admin ruxsati talab qilinadi.", status=403)
 
         product = Product.objects.filter(workspace=membership.workspace, status="active").order_by("created_at").first()
         if not product:
-            return api_error("active_product_required", "An active workspace product is required.", status=400)
+            return api_error("active_product_required", "Faol ish maydoni mahsuloti talab qilinadi.", status=400)
 
         started_at = perf_counter()
         try:
@@ -43,7 +43,7 @@ class AIConnectionTestView(APIView):
                 consent_status="not_requested",
             )
         except (AIProviderConfigurationError, AIProviderError):
-            return api_error("ai_connection_failed", "AI provider connection test failed.", status=503)
+            return api_error("ai_connection_failed", "AI provayder ulanish testi muvaffaqiyatsiz tugadi.", status=503)
 
         metadata = get_ai_provider_metadata(provider)
         return Response(

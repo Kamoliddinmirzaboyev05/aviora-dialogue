@@ -36,7 +36,7 @@ def simulate_incoming_message(
     product = Product.objects.filter(workspace=workspace, status="active").first()
     trigger = TriggerSet.objects.filter(workspace=workspace, enabled=True).first()
     if not (connection and chat and product and trigger):
-        raise ValueError("Demo workspace is missing connection, chat, product, or trigger.")
+        raise ValueError("Demo ish maydonida ulanish, chat, mahsulot yoki trigger yetishmayapti.")
 
     contact, _ = TelegramContact.objects.get_or_create(
         workspace=workspace,
@@ -132,7 +132,7 @@ def approve_permission_draft(*, draft: ResponseDraft, actor):
     draft.save(update_fields=["status", "approved_by", "sent_at", "updated_at"])
     opportunity.status = Opportunity.Status.PERMISSION_REQUESTED
     opportunity.save(update_fields=["status", "updated_at"])
-    record_audit(workspace=draft.workspace, actor=actor, action="draft.approved", resource=draft, summary="Permission request sent.")
+    record_audit(workspace=draft.workspace, actor=actor, action="draft.approved", resource=draft, summary="Rozilik so'rovi yuborildi.")
     return conversation
 
 
@@ -168,7 +168,7 @@ def simulate_consent_reply(*, conversation: Conversation, message: str):
 @transaction.atomic
 def generate_product_response(*, conversation: Conversation):
     if conversation.consent_status != ConsentRecord.Status.GRANTED:
-        raise PermissionError("Consent is required before product information can be sent.")
+        raise PermissionError("Mahsulot ma'lumotini yuborishdan oldin rozilik majburiy.")
     provider = get_ai_provider()
     latest_message = conversation.messages.order_by("-created_at").first()
     draft = provider.generate_product_response(
@@ -193,14 +193,14 @@ def generate_product_response(*, conversation: Conversation):
 @transaction.atomic
 def convert_conversation_to_lead(*, workspace, conversation: Conversation, actor=None):
     if conversation.consent_status != ConsentRecord.Status.GRANTED:
-        raise PermissionError("Consent is required before converting a conversation to a lead.")
+        raise PermissionError("Suhbatni lidga aylantirishdan oldin rozilik majburiy.")
     lead, _ = Lead.objects.get_or_create(
         workspace=workspace,
         conversation=conversation,
         defaults={
             "contact": conversation.contact,
             "product": conversation.product,
-            "detected_need": conversation.summary or "Interested in product information after consent.",
+            "detected_need": conversation.summary or "Rozilikdan so'ng mahsulot ma'lumotiga qiziqdi.",
             "score": conversation.opportunity.relevance_score if conversation.opportunity else 70,
             "assigned_manager": actor,
         },

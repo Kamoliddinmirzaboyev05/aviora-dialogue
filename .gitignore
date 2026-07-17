@@ -27,3 +27,6 @@ worktrees/
 *.key
 google-credentials*.json
 .vercel
+
+# Claude Code local config
+.claude/
