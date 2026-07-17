@@ -3,13 +3,23 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from apps.accounts.serializers import EmailTokenObtainPairSerializer
+from apps.accounts.serializers import ChangePasswordSerializer, EmailTokenObtainPairSerializer
 from apps.workspaces.serializers import MembershipSerializer
 from apps.workspaces.models import WorkspaceMembership
 
 
 class LoginView(TokenObtainPairView):
     serializer_class = EmailTokenObtainPairSerializer
+
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"detail": "Parol muvaffaqiyatli yangilandi."})
 
 
 class MeView(APIView):

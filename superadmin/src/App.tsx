@@ -1,7 +1,7 @@
 import { FormEvent, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createBrowserRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom";
-import { AlertTriangle, CheckCircle2, Eye, EyeOff, LogOut, Search, ShieldCheck, Sparkles, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Eye, EyeOff, KeyRound, LogOut, Search, ShieldCheck, Sparkles, X, XCircle } from "lucide-react";
 
 import { api, tokenStore } from "./services/api";
 import type { PlatformOverview } from "./types/api";
@@ -107,8 +107,90 @@ function SignInPage() {
   );
 }
 
+function PwField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  const [show, setShow] = useState(false);
+  return (
+    <label className="block text-sm font-medium">
+      {label}
+      <div className="relative mt-1">
+        <input
+          className="w-full rounded-md border border-line px-3 py-2 pr-10 outline-emerald"
+          type={show ? "text" : "password"}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+        />
+        <button
+          type="button"
+          onClick={() => setShow((v) => !v)}
+          aria-label={show ? "Parolni yashirish" : "Parolni ko'rsatish"}
+          className="absolute inset-y-0 right-0 grid w-10 place-items-center rounded-md text-muted hover:text-ink"
+        >
+          {show ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+      </div>
+    </label>
+  );
+}
+
+function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [error, setError] = useState("");
+  const [done, setDone] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setError("");
+    if (newPassword !== confirm) {
+      setError("Yangi parollar mos kelmadi.");
+      return;
+    }
+    setLoading(true);
+    try {
+      await api.changePassword(oldPassword, newPassword);
+      setDone(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Parolni o'zgartirib bo'lmadi.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4 text-ink" onClick={onClose}>
+      <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Parolni o'zgartirish</h2>
+          <button type="button" onClick={onClose} aria-label="Yopish" className="text-muted hover:text-ink">
+            <X size={20} />
+          </button>
+        </div>
+        {done ? (
+          <div className="space-y-4">
+            <p className="rounded-md bg-emerald-50 p-3 text-sm text-emerald">Parol muvaffaqiyatli yangilandi.</p>
+            <button className="w-full rounded-md bg-emerald px-4 py-2 font-semibold text-white" onClick={onClose}>Yopish</button>
+          </div>
+        ) : (
+          <form onSubmit={submit} className="space-y-4">
+            <PwField label="Joriy parol" value={oldPassword} onChange={setOldPassword} />
+            <PwField label="Yangi parol" value={newPassword} onChange={setNewPassword} />
+            <PwField label="Yangi parolni tasdiqlang" value={confirm} onChange={setConfirm} />
+            {error && <p className="rounded-md bg-red-50 p-3 text-sm text-danger">{error}</p>}
+            <button className="w-full rounded-md bg-emerald px-4 py-2 font-semibold text-white" disabled={loading}>
+              {loading ? "Saqlanmoqda" : "Saqlash"}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function DashboardPage() {
   const navigate = useNavigate();
+  const [showChangePassword, setShowChangePassword] = useState(false);
   const [workspaceSearch, setWorkspaceSearch] = useState("");
   const [userSearch, setUserSearch] = useState("");
   const me = useQuery({ queryKey: ["me"], queryFn: api.me, enabled: Boolean(tokenStore.access) });
@@ -143,11 +225,17 @@ function DashboardPage() {
               <p className="text-sm text-white/70">{me.data?.user.email}</p>
             </div>
           </div>
-          <button className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-sm" onClick={signOut}>
-            <LogOut size={16} /> Chiqish
-          </button>
+          <div className="flex items-center gap-2">
+            <button className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-sm" onClick={() => setShowChangePassword(true)}>
+              <KeyRound size={16} /> Parol
+            </button>
+            <button className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-sm" onClick={signOut}>
+              <LogOut size={16} /> Chiqish
+            </button>
+          </div>
         </div>
       </header>
+      {showChangePassword && <ChangePasswordDialog onClose={() => setShowChangePassword(false)} />}
 
       <div className="mx-auto max-w-7xl space-y-6 px-5 py-6">
         <div>

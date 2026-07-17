@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { NavLink, Outlet, Navigate } from "react-router-dom";
-import { Activity, Bot, CheckSquare, LineChart, MessageSquare, Package, Radio, Settings, Target, Users } from "lucide-react";
+import { Activity, Bot, CheckSquare, KeyRound, LineChart, MessageSquare, Package, Radio, Settings, Target, Users } from "lucide-react";
 
 import { Button } from "../components/ui/Button";
 import { useAuth } from "../features/auth/AuthProvider";
+import { ChangePasswordDialog } from "../features/auth/ChangePasswordDialog";
 
 const nav = [
   { to: "/app", label: "Umumiy ko'rinish", icon: Activity },
@@ -19,6 +21,7 @@ const nav = [
 
 export function DashboardLayout() {
   const auth = useAuth();
+  const [showChangePassword, setShowChangePassword] = useState(false);
   if (!auth.isAuthenticated) return <Navigate to="/signin" replace />;
 
   return (
@@ -55,8 +58,14 @@ export function DashboardLayout() {
             <p className="text-sm font-medium">{auth.workspace?.business_name ?? "Demo ish maydoni"}</p>
             <p className="text-xs text-slate-500">{auth.me?.user.email}</p>
           </div>
-          <Button variant="secondary" onClick={auth.signOut}>Chiqish</Button>
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" onClick={() => setShowChangePassword(true)}>
+              <KeyRound size={16} /> Parol
+            </Button>
+            <Button variant="secondary" onClick={auth.signOut}>Chiqish</Button>
+          </div>
         </header>
+        {showChangePassword && <ChangePasswordDialog onClose={() => setShowChangePassword(false)} />}
         <main className="mx-auto max-w-7xl p-4 md:p-8">
           <Outlet />
         </main>

@@ -41,6 +41,17 @@ export const tokenStore = {
   }
 };
 
+function extractError(body: unknown, fallback: string): string {
+  if (!body || typeof body !== "object") return fallback;
+  const b = body as Record<string, unknown>;
+  if (b.error && typeof b.error === "object" && "message" in b.error) return String((b.error as { message: unknown }).message);
+  if (typeof b.detail === "string") return b.detail;
+  const first = Object.values(b).find((v) => (Array.isArray(v) && v.length) || typeof v === "string");
+  if (Array.isArray(first)) return String(first[0]);
+  if (typeof first === "string") return first;
+  return fallback;
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers);
   headers.set("Content-Type", "application/json");
@@ -49,8 +60,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
   const response = await fetch(`${API_BASE_URL}${path}`, { ...options, headers });
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
-    throw new ApiError(response.status, error.error?.message ?? "So'rov bajarilmadi");
+    const error = await response.json().catch(() => ({}));
+    throw new ApiError(response.status, extractError(error, "So'rov bajarilmadi"));
   }
   return response.json() as Promise<T>;
 }
@@ -98,5 +109,10 @@ export const api = {
     request<Lead>(`/leads/${leadId}/`, {
       method: "PATCH",
       body: JSON.stringify({ status })
+    }),
+  changePassword: (oldPassword: string, newPassword: string) =>
+    request<{ detail: string }>("/auth/change-password/", {
+      method: "POST",
+      body: JSON.stringify({ old_password: oldPassword, new_password: newPassword })
     })
 };

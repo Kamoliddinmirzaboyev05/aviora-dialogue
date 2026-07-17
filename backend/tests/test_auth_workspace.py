@@ -33,6 +33,40 @@ def test_demo_owner_can_login_and_see_workspace():
     assert workspaces.data["results"][0]["name"] == "Demo Workspace"
 
 
+def test_change_password_requires_correct_old_password_and_updates():
+    get_user_model().objects.create_user(email="owner@example.com", password="ChangeMe123!")
+    client = APIClient()
+    login = client.post("/api/v1/auth/login/", {"email": "owner@example.com", "password": "ChangeMe123!"})
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.data['access']}")
+
+    # Wrong current password is rejected.
+    wrong = client.post(
+        "/api/v1/auth/change-password/",
+        {"old_password": "nope", "new_password": "BrandNew123!"},
+    )
+    assert wrong.status_code == 400
+
+    # Correct current password updates it.
+    ok = client.post(
+        "/api/v1/auth/change-password/",
+        {"old_password": "ChangeMe123!", "new_password": "BrandNew123!"},
+    )
+    assert ok.status_code == 200
+
+    fresh = APIClient()
+    relogin = fresh.post("/api/v1/auth/login/", {"email": "owner@example.com", "password": "BrandNew123!"})
+    assert relogin.status_code == 200
+
+
+def test_change_password_requires_authentication():
+    client = APIClient()
+    response = client.post(
+        "/api/v1/auth/change-password/",
+        {"old_password": "x", "new_password": "BrandNew123!"},
+    )
+    assert response.status_code == 401
+
+
 def test_workspace_list_only_returns_memberships():
     user = get_user_model().objects.create_user(email="owner@example.com", password="ChangeMe123!")
     visible = Workspace.objects.create(name="Visible", business_name="Visible Co")
