@@ -1,0 +1,21 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/signin",
+      "destination": "https://aviora-dialogue.vercel.app/signin"
+    },
+    {
+      "source": "/app",
+      "destination": "https://aviora-dialogue.vercel.app/app"
+    },
+    {
+      "source": "/app/:path*",
+      "destination": "https://aviora-dialogue.vercel.app/app/:path*"
+    },
+    {
+      "source": "/:path*",
+      "destination": "/index.html"
+    }
+  ]
+}
