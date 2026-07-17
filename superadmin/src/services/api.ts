@@ -69,5 +69,10 @@ export const api = {
     request<{ detail: string }>("/auth/change-password/", {
       method: "POST",
       body: JSON.stringify({ old_password: oldPassword, new_password: newPassword })
+    }),
+  createUser: (payload: { email: string; full_name: string; password: string; role: "admin" | "superadmin" }) =>
+    request<PlatformUser>("/superadmin/users/", {
+      method: "POST",
+      body: JSON.stringify(payload)
     })
 };

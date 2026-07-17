@@ -255,3 +255,41 @@ def test_staff_can_view_recent_operational_events(staff_client, platform_data):
         "audit_log",
     }
     assert all(event["workspace"] == "Northwind Sales" for event in response.data["results"])
+
+
+def test_staff_can_create_admin(staff_client):
+    response = staff_client.post(
+        "/api/v1/superadmin/users/",
+        {"email": "newadmin@example.com", "full_name": "New Admin", "password": "BrandNew123!", "role": "admin"},
+    )
+    assert response.status_code == 201
+    created = get_user_model().objects.get(email="newadmin@example.com")
+    assert created.is_staff is True
+    assert created.is_superuser is False
+    assert created.check_password("BrandNew123!")
+
+
+def test_non_staff_cannot_create_admin(user_client):
+    response = user_client.post(
+        "/api/v1/superadmin/users/",
+        {"email": "x@example.com", "password": "BrandNew123!", "role": "admin"},
+    )
+    assert response.status_code == 403
+
+
+def test_staff_cannot_create_superadmin(staff_client):
+    response = staff_client.post(
+        "/api/v1/superadmin/users/",
+        {"email": "super@example.com", "password": "BrandNew123!", "role": "superadmin"},
+    )
+    assert response.status_code == 400
+    assert not get_user_model().objects.filter(email="super@example.com").exists()
+
+
+def test_duplicate_email_rejected(staff_client):
+    get_user_model().objects.create_user(email="dupe@example.com", password="ChangeMe123!")
+    response = staff_client.post(
+        "/api/v1/superadmin/users/",
+        {"email": "dupe@example.com", "password": "BrandNew123!", "role": "admin"},
+    )
+    assert response.status_code == 400

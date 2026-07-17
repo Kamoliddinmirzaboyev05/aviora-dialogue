@@ -1,9 +1,10 @@
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
 from django.db.models import CharField, Count, F, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Concat
 from rest_framework import serializers
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import ListAPIView, ListCreateAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -102,9 +103,56 @@ class WorkspaceListView(ListAPIView):
         return queryset.order_by("name", "id")
 
 
-class UserListView(ListAPIView):
-    serializer_class = UserOverviewSerializer
+class UserCreateSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    full_name = serializers.CharField(required=False, allow_blank=True, default="")
+    password = serializers.CharField(write_only=True)
+    role = serializers.ChoiceField(choices=["admin", "superadmin"], default="admin")
+
+    def validate_email(self, value):
+        value = value.strip().lower()
+        model = get_user_model()
+        if model.objects.filter(Q(email__iexact=value) | Q(username__iexact=value)).exists():
+            raise serializers.ValidationError("Bu email allaqachon mavjud.")
+        return value
+
+    def validate_password(self, value):
+        validate_password(value)
+        return value
+
+    def validate_role(self, value):
+        # Only a superuser may mint another superadmin (privilege escalation guard).
+        if value == "superadmin" and not self.context["request"].user.is_superuser:
+            raise serializers.ValidationError("Superadmin yaratish uchun superuser huquqi kerak.")
+        return value
+
+    def create(self, validated_data):
+        role = validated_data["role"]
+        return get_user_model().objects.create_user(
+            email=validated_data["email"],
+            password=validated_data["password"],
+            full_name=validated_data.get("full_name", ""),
+            is_staff=True,
+            is_superuser=(role == "superadmin"),
+        )
+
+    def to_representation(self, instance):
+        return {
+            "id": str(instance.pk),
+            "email": instance.email,
+            "full_name": instance.full_name,
+            "is_staff": instance.is_staff,
+            "is_superuser": instance.is_superuser,
+        }
+
+
+class UserListView(ListCreateAPIView):
     permission_classes = [IsPlatformStaff]
+
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return UserCreateSerializer
+        return UserOverviewSerializer
 
     def get_queryset(self):
         queryset = get_user_model().objects.annotate(

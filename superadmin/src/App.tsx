@@ -1,7 +1,7 @@
 import { FormEvent, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createBrowserRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom";
-import { AlertTriangle, CheckCircle2, Eye, EyeOff, KeyRound, LogOut, Search, ShieldCheck, Sparkles, X, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Eye, EyeOff, KeyRound, LogOut, Search, ShieldCheck, Sparkles, UserPlus, X, XCircle } from "lucide-react";
 
 import { api, tokenStore } from "./services/api";
 import type { PlatformOverview } from "./types/api";
@@ -188,9 +188,78 @@ function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
   );
 }
 
+function CreateUserDialog({ canMakeSuperadmin, onClose, onCreated }: { canMakeSuperadmin: boolean; onClose: () => void; onCreated: () => void }) {
+  const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState<"admin" | "superadmin">("admin");
+  const [error, setError] = useState("");
+  const [done, setDone] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      await api.createUser({ email, full_name: fullName, password, role });
+      onCreated();
+      setDone(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Foydalanuvchi yaratib bo'lmadi.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4 text-ink" onClick={onClose}>
+      <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Yangi admin qo'shish</h2>
+          <button type="button" onClick={onClose} aria-label="Yopish" className="text-muted hover:text-ink">
+            <X size={20} />
+          </button>
+        </div>
+        {done ? (
+          <div className="space-y-4">
+            <p className="rounded-md bg-emerald-50 p-3 text-sm text-emerald">Foydalanuvchi yaratildi.</p>
+            <button className="w-full rounded-md bg-emerald px-4 py-2 font-semibold text-white" onClick={onClose}>Yopish</button>
+          </div>
+        ) : (
+          <form onSubmit={submit} className="space-y-4">
+            <label className="block text-sm font-medium">
+              Email
+              <input className="mt-1 w-full rounded-md border border-line px-3 py-2 outline-emerald" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            </label>
+            <label className="block text-sm font-medium">
+              To'liq ism
+              <input className="mt-1 w-full rounded-md border border-line px-3 py-2 outline-emerald" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+            </label>
+            <PwField label="Parol" value={password} onChange={setPassword} />
+            <label className="block text-sm font-medium">
+              Rol
+              <select className="mt-1 w-full rounded-md border border-line px-3 py-2 outline-emerald" value={role} onChange={(e) => setRole(e.target.value as "admin" | "superadmin")}>
+                <option value="admin">Admin (platforma xodimi)</option>
+                {canMakeSuperadmin && <option value="superadmin">Superadmin (to'liq huquq)</option>}
+              </select>
+            </label>
+            {error && <p className="rounded-md bg-red-50 p-3 text-sm text-danger">{error}</p>}
+            <button className="w-full rounded-md bg-emerald px-4 py-2 font-semibold text-white" disabled={loading}>
+              {loading ? "Yaratilmoqda" : "Yaratish"}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function DashboardPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [showCreateUser, setShowCreateUser] = useState(false);
   const [workspaceSearch, setWorkspaceSearch] = useState("");
   const [userSearch, setUserSearch] = useState("");
   const me = useQuery({ queryKey: ["me"], queryFn: api.me, enabled: Boolean(tokenStore.access) });
@@ -226,6 +295,9 @@ function DashboardPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-2 text-sm font-semibold text-ink" onClick={() => setShowCreateUser(true)}>
+              <UserPlus size={16} /> Yangi admin
+            </button>
             <button className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-sm" onClick={() => setShowChangePassword(true)}>
               <KeyRound size={16} /> Parol
             </button>
@@ -236,6 +308,13 @@ function DashboardPage() {
         </div>
       </header>
       {showChangePassword && <ChangePasswordDialog onClose={() => setShowChangePassword(false)} />}
+      {showCreateUser && (
+        <CreateUserDialog
+          canMakeSuperadmin={Boolean(me.data?.user.is_superuser)}
+          onClose={() => setShowCreateUser(false)}
+          onCreated={() => queryClient.invalidateQueries({ queryKey: ["users"] })}
+        />
+      )}
 
       <div className="mx-auto max-w-7xl space-y-6 px-5 py-6">
         <div>
