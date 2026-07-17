@@ -1,5 +1,6 @@
 from django.db import models
 
+from apps.common.crypto import decrypt, encrypt
 from apps.common.models import WorkspaceScopedModel
 
 
@@ -13,6 +14,25 @@ class TelegramConnection(WorkspaceScopedModel):
     is_active = models.BooleanField(default=True)
     last_error = models.TextField(blank=True)
     encrypted_bot_token = models.TextField(blank=True)
+
+    # Userbot (MTProto/Telethon) — shaxsiy akkaunt telefon+kod bilan ulanadi
+    mode = models.CharField(max_length=16, default="bot_api")  # bot_api | userbot
+    phone = models.CharField(max_length=32, blank=True)
+    session_string = models.TextField(blank=True)  # Telethon StringSession
+    phone_code_hash = models.CharField(max_length=128, blank=True)  # login start->verify orasida
+    login_state = models.CharField(max_length=16, default="idle")  # idle|code_sent|active|error
+    auto_reply = models.BooleanField(default=True)  # DM va guruhga avto-javob
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["mode", "login_state", "is_active"]),
+        ]
+
+    def set_session(self, plaintext: str):
+        self.session_string = encrypt(plaintext)
+
+    def get_session(self) -> str:
+        return decrypt(self.session_string)
 
 
 class TelegramChat(WorkspaceScopedModel):

@@ -1,6 +1,7 @@
 from uuid import UUID
 import secrets
 
+from asgiref.sync import async_to_sync
 from django.conf import settings
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -20,6 +21,7 @@ from apps.telegram_integration.services import (
     get_telegram_provider,
     ingest_telegram_update,
 )
+from apps.telegram_integration.userbot.login import start_login, verify_login
 from apps.workspaces.models import Workspace, WorkspaceMembership
 
 
@@ -216,3 +218,81 @@ def _workspace_admin(request):
             status=403,
         )
     return membership, None
+
+
+class UserbotStartLoginView(APIView):
+    """Userbot login 1-qadam: telefonga kod yuboradi."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        membership, error_response = _workspace_admin(request)
+        if error_response:
+            return error_response
+        phone = str(request.data.get("phone", "")).strip()
+        if not phone:
+            return api_error("phone_required", "Telefon raqami kerak.", status=400)
+
+        connection, _ = TelegramConnection.objects.get_or_create(
+            workspace=membership.workspace,
+            mode="userbot",
+            defaults={"name": "Userbot", "provider": "userbot"},
+        )
+        try:
+            result = async_to_sync(start_login)(phone, connection.get_session())
+        except Exception as exc:  # noqa: BLE001
+            return api_error("telegram_login_failed", str(exc), status=503)
+
+        connection.phone = phone
+        connection.set_session(result["session_string"])
+        connection.phone_code_hash = result["phone_code_hash"]
+        connection.login_state = "code_sent"
+        connection.provider = "userbot"
+        connection.last_error = ""
+        connection.save()
+        return Response({"state": "code_sent", "connection": str(connection.id)})
+
+
+class UserbotVerifyLoginView(APIView):
+    """Userbot login 2-qadam: kodni (va kerak bo'lsa 2FA parolni) tasdiqlaydi."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        membership, error_response = _workspace_admin(request)
+        if error_response:
+            return error_response
+        code = str(request.data.get("code", "")).strip()
+        password = str(request.data.get("password", "")).strip()
+        if not code:
+            return api_error("code_required", "Tasdiqlash kodi kerak.", status=400)
+
+        connection = TelegramConnection.objects.filter(
+            workspace=membership.workspace, mode="userbot", login_state="code_sent"
+        ).first()
+        if not connection:
+            return api_error(
+                "telegram_login_not_started", "Avval kod so'rang.", status=404
+            )
+        try:
+            result = async_to_sync(verify_login)(
+                connection.phone,
+                code,
+                connection.phone_code_hash,
+                connection.get_session(),
+                password,
+            )
+        except Exception as exc:  # noqa: BLE001
+            return api_error("telegram_verify_failed", str(exc), status=400)
+
+        if result.get("needs_password"):
+            return Response({"state": "needs_password"})
+
+        connection.set_session(result["session_string"])
+        connection.bot_id = result.get("user_id", "")
+        connection.bot_username = result.get("username", "")
+        connection.phone_code_hash = ""
+        connection.login_state = "active"
+        connection.last_error = ""
+        connection.save()
+        return Response({"state": "active", "username": connection.bot_username})

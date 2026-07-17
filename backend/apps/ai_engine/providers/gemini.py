@@ -38,7 +38,11 @@ class GeminiAPIProvider:
         self.model = model if model is not None else settings.GEMINI_MODEL
         if not self.api_key:
             raise AIProviderConfigurationError("Gemini API provider requires GEMINI_API_KEY.")
-        self.client = client if client is not None else genai.Client(api_key=self.api_key)
+        if client is not None:
+            self.client = client
+        else:
+            # "AQ." bilan boshlangan keylar Vertex AI express keylari
+            self.client = genai.Client(api_key=self.api_key, vertexai=self.api_key.startswith("AQ."))
 
     def classify_message(self, *, message: str, product: Product, consent_status: str) -> ClassificationResult:
         normalized = self._generate(

@@ -28,7 +28,7 @@ services:
     env_file: .env
     environment:
       CORS_ALLOW_ALL_ORIGINS: ${CORS_ALLOW_ALL_ORIGINS:-true}
-    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers ${GUNICORN_WORKERS:-5} --max-requests 1000 --max-requests-jitter 100
     depends_on:
       db:
         condition: service_healthy
@@ -50,6 +50,18 @@ services:
     env_file: .env
     command: celery -A config beat -l info
     depends_on:
+      redis:
+        condition: service_healthy
+
+  userbot:
+    build:
+      context: ./backend
+    env_file: .env
+    command: python manage.py run_userbot
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
       redis:
         condition: service_healthy
 

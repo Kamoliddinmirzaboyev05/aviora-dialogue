@@ -16,6 +16,7 @@ class TriggerSet(WorkspaceScopedModel):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["workspace", "name"], name="unique_trigger_set_per_workspace")]
+        indexes = [models.Index(fields=["workspace", "enabled"])]
 
     def __str__(self):
         return self.name

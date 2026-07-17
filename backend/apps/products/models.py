@@ -18,6 +18,7 @@ class Product(WorkspaceScopedModel):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["workspace", "name"], name="unique_product_per_workspace")]
+        indexes = [models.Index(fields=["workspace", "status"])]
 
     def __str__(self):
         return self.name

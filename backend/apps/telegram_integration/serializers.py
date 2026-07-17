@@ -6,7 +6,7 @@ from apps.telegram_integration.models import TelegramChat, TelegramConnection
 class TelegramConnectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = TelegramConnection
-        exclude = ["encrypted_bot_token"]
+        exclude = ["encrypted_bot_token", "session_string", "phone_code_hash"]
 
 
 class TelegramChatSerializer(serializers.ModelSerializer):

@@ -138,6 +138,20 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 TELEGRAM_PROVIDER = os.getenv("TELEGRAM_PROVIDER", "mock").strip().lower()
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_API_ID = os.getenv("TELEGRAM_API_ID", "")
+TELEGRAM_API_HASH = os.getenv("TELEGRAM_API_HASH", "")
+# Scale uchun bir nechta api_id/hash pool: "id1:hash1,id2:hash2" (Telegram bitta api_id ni flag qilmasligi uchun)
+TELEGRAM_API_POOL = os.getenv("TELEGRAM_API_POOL", "")
+
+# Userbot worker sharding: har konteyner akkauntlarning bir ulushini oladi
+USERBOT_SHARD_INDEX = int(os.getenv("USERBOT_SHARD_INDEX", "0"))
+USERBOT_SHARD_COUNT = int(os.getenv("USERBOT_SHARD_COUNT", "1"))
+# Ban himoyasi / rate-limit
+USERBOT_MAX_SENDS_PER_HOUR = int(os.getenv("USERBOT_MAX_SENDS_PER_HOUR", "15"))
+USERBOT_GROUP_COOLDOWN = int(os.getenv("USERBOT_GROUP_COOLDOWN", "600"))
+USERBOT_MIN_DELAY = float(os.getenv("USERBOT_MIN_DELAY", "3"))
+USERBOT_MAX_DELAY = float(os.getenv("USERBOT_MAX_DELAY", "12"))
+USERBOT_TENANT_CACHE_TTL = int(os.getenv("USERBOT_TENANT_CACHE_TTL", "60"))
 TELEGRAM_WEBHOOK_SECRET = os.getenv("TELEGRAM_WEBHOOK_SECRET", "")
 TELEGRAM_WEBHOOK_BASE_URL = os.getenv(
     "TELEGRAM_WEBHOOK_BASE_URL", "http://localhost:8000"
@@ -145,3 +159,5 @@ TELEGRAM_WEBHOOK_BASE_URL = os.getenv(
 VERTEX_PROJECT_ID = os.getenv("VERTEX_PROJECT_ID", "")
 VERTEX_LOCATION = os.getenv("VERTEX_LOCATION", "us-central1")
 VERTEX_MODEL = os.getenv("VERTEX_MODEL", "gemini-2.5-flash")
+
+ENCRYPTION_KEY = os.getenv("ENCRYPTION_KEY", "dev-only-not-for-production")
